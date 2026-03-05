@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>珂阳AI门户 - 智能问答</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1a2235;
+            --bg-card: #151d2e;
+            --bg-hover: #1e2a42;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #60a5fa;
+            --accent-glow: #2563eb;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #1e293b;
+            --border-light: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Chat History */
+        .chat-history {
+            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            max-height: 280px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 0 4px;
+        }
+
+        .chat-history-header span {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .clear-history {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .clear-history:hover {
+            background: var(--bg-hover);
+            color: var(--error);
+        }
+
+        .clear-history svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .chat-history-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-hover);
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-question {
+            font-size: 12px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .history-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-context {
+            color: var(--accent-secondary);
+        }
+
+        .history-empty {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 16px;
+        }
+
+        /* Sidebar Footer - User Profile */
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background: var(--bg-hover);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Navigation */
+        .nav-menu {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+            max-height: calc(100vh - 320px);
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-secondary);
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .nav-item .count {
+            margin-left: auto;
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Topbar */
+        .topbar {
+            height: 60px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+        }
+
+        .current-context {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .current-context-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .current-context-icon svg {
+            width: 18px;
+            height: 18px;
+            color: white;
+        }
+
+        .current-context-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .current-context-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .current-context-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Main area with sidebar + chat + FAQ */
+        .main-area {
+            flex: 1;
+            display: flex;
+            margin-left: 240px;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1000px;
+            width: 100%;
+            padding: 24px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        /* FAQ Section (inline) */
+        .faq-section {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+
+        .faq-section.hidden {
+            display: none;
+        }
+
+        .faq-header-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .faq-header-inline svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent-primary);
+        }
+
+        .faq-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .faq-item {
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            max-width: 45%;
+        }
+
+        .faq-item:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-hover);
+        }
+
+        .faq-item-question {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .faq-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .faq-empty-text {
+            font-size: 13px;
+        }
+
+        /* Chat Messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 85%;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        .message-avatar svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .message-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+
+        .message.user .message-content {
+            background: var(--bg-tertiary);
+            border-color: var(--border-light);
+        }
+
+        .message-content p {
+            margin-bottom: 8px;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin-bottom: 4px;
+        }
+
+        .message-content code {
+            background: var(--bg-hover);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 13px;
+        }
+
+        /* Input Area */
+        .input-area {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: auto;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-family: inherit;
+            resize: none;
+            min-height: 52px;
+            max-height: 150px;
+            line-height: 1.5;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .send-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-btn svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .empty-state-icon svg {
+            width: 40px;
+            height: 40px;
+            color: var(--accent-primary);
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 300px;
+        }
+
+        /* Context hint */
+        .context-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--accent-secondary);
+        }
+
+        .context-hint svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 3px;
+        }
+
+        /* Loading */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+
+        /* Prominent nav item (New Employee Training) */
+        .nav-item.prominent {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(219, 39, 119, 0.1));
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item.prominent:hover {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(219, 39, 119, 0.15));
+            border-color: rgba(236, 72, 153, 0.5);
+        }
+
+        .nav-item.prominent.active {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(219, 39, 119, 0.2));
+            border-color: #ec4899;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Selected indicator */
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 3px;
+            height: 20px;
+            background: var(--accent-primary);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        /* Reference toggle styles */
+        .ref-toggle.open .ref-arrow {
+            transform: rotate(180deg);
+        }
+        .ref-toggle.open .ref-content {
+            max-height: 2000px !important;
+            margin-top: 0 !important;
+        }
+        .ref-toggle > div:first-child:hover {
+            background: var(--bg-hover) !important;
+            border-color: var(--border-light) !important;
+            color: var(--text-primary) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text">珂阳AI</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">产品</div>
+                    <div class="nav-item active" data-type="product" data-id="mes" data-name="MES制造执行系统" data-icon="mes">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        <span>MES制造执行系统</span>
+                    </div>
+                    <div class="nav-item" data-type="product" data-id="eap" data-name="EAP设备自动化" data-icon="eap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                        </svg>
+                        <span>EAP设备自动化</span>
+                    </div>
+                    <div class="nav-item" data-type="product" data-id="rtms" data-name="RTMS实时监控" data-icon="rtms">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 20V10"/>
+                            <path d="M12 20V4"/>
+                            <path d="M6 20v-6"/>
+                        </svg>
+                        <span>RTMS实时监控</span>
+                    </div>
+                </div>
+
+                <!-- New Employee Training - Prominent -->
+                <div class="nav-section">
+                    <div class="nav-item prominent" data-type="project" data-id="project2" data-name="新人培训" data-icon="train">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </svg>
+                        <span>新人培训</span>
+                        <span class="nav-badge">NEW</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">项目</div>
+                    <div class="nav-item" data-type="project" data-id="project1" data-name="合肥长鑫RTD" data-icon="project">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span>合肥长鑫RTD</span>
+                    </div>
+                    <div class="nav-item" data-type="project" data-id="project3" data-name="北电eWorks" data-icon="tech">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        <span>北电eWorks</span>
+                    </div>
+                    <div class="nav-item" data-type="project" data-id="project4" data-name="北方华创CIM" data-icon="bfcq">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        <span>北方华创CIM</span>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Chat History -->
+            <div class="chat-history">
+                <div class="chat-history-header">
+                    <span>问答历史</span>
+                    <button class="clear-history" title="清空历史">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="chat-history-list" id="chatHistoryList">
+                    <div class="history-empty">暂无问答记录</div>
+                </div>
+            </div>
+
+            <!-- User Profile -->
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">张</div>
+                    <div class="user-info">
+                        <div class="user-name">张明</div>
+                        <div class="user-role">MES产品部</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="current-context">
+                    <div class="current-context-icon" id="contextIcon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="current-context-info">
+                        <span class="current-context-label">当前上下文</span>
+                        <span class="current-context-name" id="contextName">MES制造执行系统</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="main-area">
+                <!-- Chat Container -->
+                <div class="chat-container">
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-state-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="empty-state-title">开始智能问答</h3>
+                        <p class="empty-state-desc">选择左侧的产品或项目，我将根据您选择的内容为您提供专属的智能问答服务</p>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div class="chat-messages" id="chatMessages" style="display: none;">
+                        <!-- Messages will be added here -->
+                    </div>
+
+                    <!-- FAQ Section (above input) -->
+                    <div class="faq-section" id="faqSection">
+                        <div class="faq-header-inline">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <span>常见问题</span>
+                        </div>
+                        <div class="faq-list" id="faqList">
+                            <!-- FAQ items will be dynamically added -->
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="input-area">
+                        <div class="input-wrapper">
+                            <textarea class="chat-input" id="chatInput" placeholder="输入您的问题..." rows="1"></textarea>
+                            <button class="send-btn" id="sendBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // State
+        let currentContext = {
+            type: 'product',
+            id: 'mes',
+            name: 'MES制造执行系统',
+            icon: 'mes'
+        };
+
+        let hasStartedChat = false;
+
+        // DOM Elements
+        const navItems = document.querySelectorAll('.nav-item');
+        const contextIcon = document.getElementById('contextIcon');
+        const contextName = document.getElementById('contextName');
+        const contextHint = document.getElementById('contextHint');
+        const contextHintText = document.getElementById('contextHintText');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const emptyState = document.getElementById('emptyState');
+        const chatHistoryList = document.getElementById('chatHistoryList');
+
+        // Chat history management
+        let chatHistory = [];
+
+        function addToHistory(question, contextName) {
+            const historyItem = {
+                question: question,
+                context: contextName,
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+            };
+            chatHistory.unshift(historyItem);
+            if (chatHistory.length > 10) chatHistory.pop(); // Keep max 10 items
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (chatHistory.length === 0) {
+                chatHistoryList.innerHTML = '<div class="history-empty">暂无问答记录</div>';
+                return;
+            }
+            chatHistoryList.innerHTML = chatHistory.map(item => `
+                <div class="history-item" data-question="${item.question}">
+                    <div class="history-question">${item.question}</div>
+                    <div class="history-meta">
+                        <span class="history-context">${item.context}</span>
+                        <span>${item.time}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    chatInput.value = this.dataset.question;
+                    chatInput.focus();
+                });
+            });
+        }
+
+        // Clear history
+        document.querySelector('.clear-history').addEventListener('click', function() {
+            chatHistory = [];
+            renderHistory();
+        });
+
+        // Initialize history
+        renderHistory();
+
+        // Icon mappings
+        const iconConfigs = {
+            mes: { gradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' },
+            eap: { gradient: 'linear-gradient(135deg, #10b981, #059669)', icon: '<circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>' },
+            rtms: { gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', icon: '<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>' },
+            project: { gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', icon: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>' },
+            train: { gradient: 'linear-gradient(135deg, #ec4899, #db2777)', icon: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' },
+            tech: { gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)', icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' },
+            bfcq: { gradient: 'linear-gradient(135deg, #f97316, #ea580c)', icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' }
+        };
+
+        // Sample responses based on context (Semiconductor CIM)
+        const responses = {
+            mes: {
+                default: '关于MES制造执行系统，我可以为您解答：\n\n• **生产调度**：工单排程、产能分配、优先级设置\n• **工艺管理**：SOP配置、参数模板、工艺路径\n• **质量管控**：IPC标准、检验点设置、不良品处理\n• **设备集成**：设备通讯、状态监控、OEE计算\n\n请告诉我您想了解的具体功能或操作。',
+                workorder: '创建生产工单的步骤：\n\n1. 进入「生产管理」>「工单管理」\n2. 点击「新建工单」按钮\n3. 选择产品型号、工单数量、优先级\n4. 设置生产车间和工艺路径\n5. 提交审核后即可下达生产\n\n工单下达后，系统会自动分配到对应的产线。',
+                defect: '不良品处理流程：\n\n1. 产线作业员发现不良，录入不良代码\n2. 品质部门进行判定和分析\n3. 根据判定结果：返工、返修、降级或报废\n4. 系统记录不良原因和对策\n5. 生成品质分析报表'
+            },
+            eap: {
+                default: '关于EAP设备自动化系统，我可以帮助您了解：\n\n• **设备通讯**：SECS/GEM协议、OPC UA、Modbus\n• **程序管理**：设备程序上传下载、版本控制\n• **数据采集**：设备状态、报警信息、生产参数\n• **远程控制**：设备启停、参数调整、模式切换\n\n请选择您想了解的具体功能。',
+                secs: 'SECS/GEM设备连接配置步骤：\n\n1. 在EAP管理界面添加新设备\n2. 配置设备IP地址和端口号\n3. 选择SECS/GEM协议类型\n4. 设置HSMS或SEMI E4/E5/E6/E37参数\n5. 测试连接并验证通讯\n\n连接成功后即可实现设备远程控制。',
+                alarm: '设备报警处理流程：\n\n1. 监控界面显示设备报警\n2. 查看报警详情和可能原因\n3. 根据SOP进行故障排除\n4. 排除故障后点击「清除报警」\n5. 系统记录报警时间和处理时长'
+            },
+            rtms: {
+                default: '关于RTMS实时监控系统，我可以为您介绍：\n\n• **实时监控**：产线状态、设备OEE、产能利用率\n• **数据可视化**：大屏看板、趋势图、柏拉图\n• **异常告警**：限值报警、趋势报警、智能预警\n• **历史分析**：报表查询、数据导出、对比分析\n\n请告诉我您关注的具体模块。',
+                oee: 'OEE计算公式：\n\nOEE = 可用率 × 性能率 × 质量率\n\n• **可用率** = 实际运行时间 / 计划运行时间\n• **性能率** = 实际产量 / (理论节拍 × 实际运行时间)\n• **质量率** = 良品数 / 实际产量\n\n系统会自动采集设备数据并计算OEE。',
+                kanban: '电子看板配置步骤：\n\n1. 进入「看板管理」创建新看板\n2. 选择看板类型（产线/设备/品质）\n3. 添加需要展示的KPI指标\n4. 设置刷新频率和布局\n5. 发布到指定大屏或浏览器'
+            },
+            project1: {
+                default: '关于合肥长鑫RTD项目，目前进度：\n\n• 一期：洁净室装修完成 ✓\n• 二期：设备搬入安装中\n• 三期：EAP系统集成调试\n• 四期：试产验证\n\n预计下月进入试产阶段。'
+            },
+            project2: {
+                default: '新人培训知识库包含以下内容：\n\n• **安全培训**：ESD防护、化学品安全、紧急应变\n• **岗位培训**：SOP操作、设备操作、异常处理\n• **系统培训**：MES操作、EAP使用、报表查询\n• **品质培训**：IPC标准、检验方法、不良判定\n\n新人可以从头开始学习半导体制造流程。'
+            },
+            project3: {
+                default: '北电eWorks项目进度：\n\n• 第一阶段：需求调研完成 ✓\n• 第二阶段：系统设计开发中\n• 第三阶段：测试验证\n• 第四阶段：上线部署\n\n目标是实现工厂智能化管理。'
+            },
+            project4: {
+                default: '北方华创CIM项目进度：\n\n• 第一阶段：设备对接协议制定 ✓\n• 第二阶段：MES定制开发中\n• 第三阶段：EAP集成测试\n• 第四阶段：试运行\n\n预计年底完成全厂CIM系统上线。'
+            }
+        };
+
+        // FAQ data for each product/project (Semiconductor CIM)
+        const faqData = {
+            mes: [
+                { question: '如何创建生产工单？', answer: '进入工单管理，点击新建，选择产品型号和数量后提交。' },
+                { question: 'SOP如何配置？', answer: '在工艺管理中添加SOP，设置工序参数和检验点。' },
+                { question: '不良品如何处理？', answer: '录入不良代码，品质判定后根据结果进行返工或报废。' },
+                { question: '如何查看生产进度？', answer: '在生产监控看板查看工单进度、产能和良率。' },
+                { question: '设备如何关联工单？', answer: '在工单下达时选择产线，系统自动分配到对应设备。' }
+            ],
+            eap: [
+                { question: '如何连接新设备？', answer: '在EAP管理添加设备，配置IP地址和SECS/GEM协议。' },
+                { question: '设备报警如何处理？', answer: '查看报警代码，根据SOP排除故障后清除报警。' },
+                { question: '如何远程控制设备？', answer: '通过EAP系统远程启停设备、调整参数、下传程序。' },
+                { question: '设备状态如何查看？', answer: '在设备监控界面查看运行状态、当前recipe、产能等。' }
+            ],
+            rtms: [
+                { question: 'OEE如何计算？', answer: 'OEE=可用率×性能率×质量率，系统自动采集计算。' },
+                { question: '看板如何配置？', answer: '创建看板，选择KPI指标，设置布局和刷新频率。' },
+                { question: '如何设置告警规则？', answer: '在告警管理添加规则，设置限值和通知人员。' },
+                { question: '历史数据如何查询？', answer: '在报表中心选择时间范围和指标，导出分析。' }
+            ],
+            project1: [
+                { question: '扩产项目目前进度？', answer: '目前进入设备安装阶段，预计下月试产。' },
+                { question: '如何参与项目？', answer: '联系项目经理获取入项权限和培训资料。' },
+                { question: '项目文档在哪里？', answer: '在项目知识库中查看技术文档和进度报告。' }
+            ],
+            project2: [
+                { question: 'ESD防护有哪些要求？', answer: '必须穿戴防静电手环、防静电服，进入ESD区域前通过离子风机。' },
+                { question: '设备操作需要什么权限？', answer: '完成设备培训后，由班组长开通设备操作权限。' },
+                { question: '遇到异常如何处理？', answer: '记录异常现象，通知当班工程师，按SOP进行应急处理。' },
+                { question: 'MES系统如何登录？', answer: '使用工号登录，首次登录需激活账号。' }
+            ],
+            project3: [
+                { question: '北电eWorks是什么？', answer: '北电eWorks是工厂智能化管理系统，包含MES、EAP、RTMS模块。' },
+                { question: '项目什么时候上线？', answer: '计划分四个阶段，预计明年Q1完成上线。' },
+                { question: '需要哪些系统对接？', answer: '需要对接MES、EAP、设备控制系统、ERP等。' }
+            ],
+            project4: [
+                { question: '北方华创CIM是什么？', answer: '北方华创CIM是半导体晶圆制造智能工厂系统。' },
+                { question: '项目什么时候完成？', answer: '计划分四阶段，预计年底完成全厂CIM系统上线。' },
+                { question: '涉及哪些设备？', answer: '涉及光刻机、刻蚀机、薄膜设备、检测设备等。' }
+            ]
+        };
+
+        // FAQ elements
+        const faqList = document.getElementById('faqList');
+
+        // Update FAQ list based on current context
+        function updateFAQ() {
+            const faqs = faqData[currentContext.id] || [];
+
+            if (faqs.length === 0) {
+                faqList.innerHTML = `
+                    <div class="faq-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <p class="faq-empty-text">暂无常见问题</p>
+                    </div>
+                `;
+                return;
+            }
+
+            faqList.innerHTML = faqs.map((faq, index) => `
+                <div class="faq-item" data-question="${faq.question}">
+                    <div class="faq-item-question">${faq.question}</div>
+                    <div class="faq-item-answer">${faq.answer}</div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const question = this.dataset.question;
+                    chatInput.value = question;
+                    sendMessage();
+                });
+            });
+        }
+
+        // Initialize FAQ on page load
+        updateFAQ();
+
+        // Handle nav item click
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Update active state
+                navItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update context
+                currentContext = {
+                    type: this.dataset.type,
+                    id: this.dataset.id,
+                    name: this.dataset.name,
+                    icon: this.dataset.icon
+                };
+
+                // Update topbar
+                const iconConfig = iconConfigs[currentContext.icon];
+                contextIcon.style.background = iconConfig.gradient;
+                contextIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconConfig.icon}</svg>`;
+                contextName.textContent = currentContext.name;
+
+                // Show context hint
+                if (contextHint) {
+                    contextHint.style.display = 'flex';
+                    const typeLabel = currentContext.type === 'product' ? '产品' : '项目';
+                    contextHintText.textContent = `您正在${currentContext.name}${typeLabel === '产品' ? '知识库' : ''}中问答`;
+                }
+
+                // Update FAQ list
+                updateFAQ();
+
+                // Clear chat if context changed
+                if (hasStartedChat) {
+                    chatMessages.innerHTML = '';
+                    const ctx = responses[currentContext.id] || responses.mes;
+                    addMessage('ai', ctx.default || '请输入您的问题。');
+                }
+            });
+        });
+
+        // API server base URL
+        const API_BASE_URL = 'http://localhost:5000';
+
+        // Call RAGFlow Chat API to get AI summary + references
+        async function fetchAnswer(question) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: question })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    return { answer: data.answer || '暂无回答。', references: data.references || [] };
+                } else {
+                    return { answer: data.error || '抱歉，检索知识库时出现错误，请稍后再试。', references: [] };
+                }
+            } catch (error) {
+                console.error('API call failed:', error);
+                return { answer: '抱歉，无法连接到后端服务，请确认API服务已启动。', references: [] };
+            }
+        }
+
+        // Format answer content: convert markdown-like text to HTML
+        function formatContent(text) {
+            return text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^### (.*$)/gm, '<h4 style="margin:12px 0 6px;color:var(--accent-secondary);">$1</h4>')
+                .replace(/^## (.*$)/gm, '<h3 style="margin:14px 0 8px;color:var(--accent-secondary);">$1</h3>')
+                .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">')
+                .replace(/^\* (.*$)/gm, '<li style="margin-left:16px;">$1</li>')
+                .replace(/^- (.*$)/gm, '<li style="margin-left:16px;">$1</li>')
+                .replace(/\n/g, '<br>');
+        }
+
+        // Add message to chat
+        function addMessage(type, content, references) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const iconHtml = type === 'ai'
+                ? '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+                : '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+
+            let refHtml = '';
+            if (references && references.length > 0) {
+                const refItems = references.map((ref, i) => `
+                    <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                        <div style="font-size:12px;color:var(--accent-secondary);margin-bottom:4px;font-weight:500;">📄 ${ref.source || 'Unknown'}</div>
+                        <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;white-space:pre-wrap;">${(ref.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                    </div>
+                `).join('');
+
+                refHtml = `
+                    <div class="ref-toggle" style="margin-top:14px;">
+                        <div onclick="this.parentElement.classList.toggle('open')" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;font-size:13px;color:var(--text-secondary);user-select:none;transition:all 0.2s;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;" class="ref-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>参考来源 (${references.length})</span>
+                        </div>
+                        <div class="ref-content" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;margin-top:0;">
+                            <div style="padding-top:10px;">${refItems}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const formattedContent = type === 'ai' ? formatContent(content) : content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br>');
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconHtml}</svg>
+                </div>
+                <div class="message-content">
+                    ${formattedContent}
+                    ${refHtml}
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // FAQ element
+        const faqSection = document.getElementById('faqSection');
+
+        // Send message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Show chat UI
+            emptyState.style.display = 'none';
+            chatMessages.style.display = 'flex';
+            if (contextHint) contextHint.style.display = 'flex';
+            hasStartedChat = true;
+
+            // Hide FAQ section when there's chat content
+            faqSection.classList.add('hidden');
+
+            // Add user message
+            addMessage('user', message);
+
+            // Add to history
+            addToHistory(message, currentContext.name);
+
+            // Clear input
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // Disable send button
+            sendBtn.disabled = true;
+
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Call API to get real answer
+            fetchAnswer(message).then(result => {
+                // Remove typing indicator
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) indicator.remove();
+
+                // Add AI response with references
+                addMessage('ai', result.answer, result.references);
+
+                // Re-enable send button
+                sendBtn.disabled = false;
+            });
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+        });
+    </script>
+</body>
+</html>
