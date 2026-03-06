@@ -3,6 +3,10 @@ import os
 import sys
 import json
 from typing import Any, List, Optional
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 # Check if mcp is installed
 try:

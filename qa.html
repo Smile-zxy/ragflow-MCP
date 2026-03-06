@@ -91,6 +91,100 @@
             color: var(--text-primary);
         }
 
+        /* Datasets Section */
+        .datasets-section {
+            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            max-height: 200px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .datasets-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .refresh-datasets {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .refresh-datasets:hover {
+            background: var(--bg-hover);
+            color: var(--accent-primary);
+        }
+
+        .refresh-datasets svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .datasets-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .datasets-loading, .datasets-empty, .datasets-error {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 12px;
+        }
+
+        .datasets-error {
+            color: var(--error);
+        }
+
+        .dataset-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .dataset-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .dataset-item.active {
+            background: var(--bg-tertiary);
+            color: var(--accent-primary);
+            border-left: 2px solid var(--accent-primary);
+        }
+
+        .dataset-item svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .dataset-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         /* Chat History */
         .chat-history {
             padding: 12px;
@@ -264,6 +358,79 @@
             letter-spacing: 1.5px;
             padding: 0 12px;
             margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-section-title .refresh-chats {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .nav-section-title .refresh-chats:hover {
+            background: var(--bg-hover);
+            color: var(--accent-primary);
+        }
+
+        .nav-section-title .refresh-chats svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .chats-loading, .chats-empty, .chats-error {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 12px;
+        }
+
+        .chats-error {
+            color: var(--error);
+        }
+
+        .chat-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .chat-nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .chat-nav-item.active {
+            background: var(--bg-tertiary);
+            color: var(--accent-primary);
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .chat-nav-item svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .chat-nav-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
         }
 
         .nav-item {
@@ -792,69 +959,36 @@
 
             <nav class="nav-menu">
                 <div class="nav-section">
-                    <div class="nav-section-title">产品</div>
-                    <div class="nav-item active" data-type="product" data-id="mes" data-name="MES制造执行系统" data-icon="mes">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                            <line x1="8" y1="21" x2="16" y2="21"/>
-                            <line x1="12" y1="17" x2="12" y2="21"/>
-                        </svg>
-                        <span>MES制造执行系统</span>
+                    <div class="nav-section-title">
+                        <span>智能体</span>
+                        <button class="refresh-chats" title="刷新" onclick="loadAgents()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6"/>
+                                <path d="M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="nav-item" data-type="product" data-id="eap" data-name="EAP设备自动化" data-icon="eap">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-                        </svg>
-                        <span>EAP设备自动化</span>
-                    </div>
-                    <div class="nav-item" data-type="product" data-id="rtms" data-name="RTMS实时监控" data-icon="rtms">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 20V10"/>
-                            <path d="M12 20V4"/>
-                            <path d="M6 20v-6"/>
-                        </svg>
-                        <span>RTMS实时监控</span>
-                    </div>
-                </div>
-
-                <!-- New Employee Training - Prominent -->
-                <div class="nav-section">
-                    <div class="nav-item prominent" data-type="project" data-id="project2" data-name="新人培训" data-icon="train">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                        </svg>
-                        <span>新人培训</span>
-                        <span class="nav-badge">NEW</span>
-                    </div>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">项目</div>
-                    <div class="nav-item" data-type="project" data-id="project1" data-name="合肥长鑫RTD" data-icon="project">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        <span>合肥长鑫RTD</span>
-                    </div>
-                    <div class="nav-item" data-type="project" data-id="project3" data-name="北电eWorks" data-icon="tech">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="16 18 22 12 16 6"/>
-                            <polyline points="8 6 2 12 8 18"/>
-                        </svg>
-                        <span>北电eWorks</span>
-                    </div>
-                    <div class="nav-item" data-type="project" data-id="project4" data-name="北方华创CIM" data-icon="bfcq">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                            <line x1="8" y1="21" x2="16" y2="21"/>
-                            <line x1="12" y1="17" x2="12" y2="21"/>
-                        </svg>
-                        <span>北方华创CIM</span>
-                    </div>
+                    <div id="chatsList" class="chats-loading">加载中...</div>
                 </div>
             </nav>
+
+            <!-- RAGFlow Datasets -->
+            <div class="datasets-section">
+                <div class="datasets-header">
+                    <span>知识库</span>
+                    <button class="refresh-datasets" title="刷新" onclick="loadDatasets()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"/>
+                            <path d="M1 20v-6h6"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="datasets-list" id="datasetsList">
+                    <div class="datasets-loading">加载中...</div>
+                </div>
+            </div>
 
             <!-- Chat History -->
             <div class="chat-history">
@@ -954,6 +1088,218 @@
     </div>
 
     <script>
+        // RAGFlow Datasets
+        let datasets = [];
+        let selectedDatasetId = null;
+
+        // RAGFlow Agents (Canvas)
+        let agents = [];
+        let currentAgentId = null;
+
+        // RAGFlow Chats
+        let chats = [];
+        let currentChatId = null;
+
+        // Load agents from RAGFlow /v1/canvas API
+        async function loadAgents() {
+            const chatsList = document.getElementById('chatsList');
+            chatsList.innerHTML = '<div class="chats-loading">加载中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/canvas`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    agents = data.data;
+                    renderAgents();
+                } else {
+                    chatsList.innerHTML = `<div class="chats-error">${data.error || '获取智能体失败'}</div>`;
+                }
+            } catch (error) {
+                console.error('Failed to load agents:', error);
+                chatsList.innerHTML = '<div class="chats-error">无法连接到服务器</div>';
+            }
+        }
+
+        // Render agents to sidebar
+        function renderAgents() {
+            const chatsList = document.getElementById('chatsList');
+
+            if (agents.length === 0) {
+                chatsList.innerHTML = '<div class="chats-empty">暂无智能体</div>';
+                return;
+            }
+
+            chatsList.innerHTML = agents.map(agent => `
+                <div class="chat-nav-item ${agent.id === currentAgentId ? 'active' : ''}"
+                     data-id="${agent.id}"
+                     data-name="${agent.name}"
+                     onclick="selectAgent('${agent.id}', '${agent.name}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
+                    <span class="chat-nav-item-name" title="${agent.name}">${agent.name}</span>
+                </div>
+            `).join('');
+        }
+
+        // Select an agent and switch to that agent's session
+        async function selectAgent(id, name) {
+            currentAgentId = id;
+            currentContext = {
+                type: 'agent',
+                id: id,
+                name: name,
+                icon: 'agent'
+            };
+            renderAgents();
+
+            // Update context display
+            if (contextName) contextName.textContent = name;
+            if (contextHintText) contextHintText.textContent = '切换到智能体会话';
+
+            // Call backend to set current agent and create/fetch session
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/canvas/set`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: id })
+                });
+                const result = await response.json();
+                if (result.success && result.chat_id) {
+                    currentChatId = result.chat_id;
+                }
+            } catch (error) {
+                console.error('Failed to set current agent:', error);
+            }
+
+            console.log('Selected agent:', name);
+        }
+
+        // Load datasets from API
+        async function loadDatasets() {
+            const datasetsList = document.getElementById('datasetsList');
+            datasetsList.innerHTML = '<div class="datasets-loading">加载中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/datasets`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    datasets = data.data;
+                    renderDatasets();
+                } else {
+                    datasetsList.innerHTML = `<div class="datasets-error">${data.error || '获取知识库失败'}</div>`;
+                }
+            } catch (error) {
+                console.error('Failed to load datasets:', error);
+                datasetsList.innerHTML = '<div class="datasets-error">无法连接到服务器</div>';
+            }
+        }
+
+        // Render datasets to sidebar
+        function renderDatasets() {
+            const datasetsList = document.getElementById('datasetsList');
+
+            if (datasets.length === 0) {
+                datasetsList.innerHTML = '<div class="datasets-empty">暂无知识库</div>';
+                return;
+            }
+
+            datasetsList.innerHTML = datasets.map(ds => `
+                <div class="dataset-item ${ds.id === selectedDatasetId ? 'active' : ''}"
+                     data-id="${ds.id}"
+                     data-name="${ds.name}"
+                     onclick="selectDataset('${ds.id}', '${ds.name}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="dataset-item-name" title="${ds.name}">${ds.name}</span>
+                </div>
+            `).join('');
+        }
+
+        // Select a dataset
+        function selectDataset(id, name) {
+            selectedDatasetId = id;
+            renderDatasets();
+            console.log('Selected dataset:', name);
+        }
+
+        // Load chats from API
+        async function loadChats() {
+            const chatsList = document.getElementById('chatsList');
+            chatsList.innerHTML = '<div class="chats-loading">加载中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/chats`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    chats = data.data;
+                    renderChats();
+                } else {
+                    chatsList.innerHTML = `<div class="chats-error">${data.error || '获取会话失败'}</div>`;
+                }
+            } catch (error) {
+                console.error('Failed to load chats:', error);
+                chatsList.innerHTML = '<div class="chats-error">无法连接到服务器</div>';
+            }
+        }
+
+        // Render chats to sidebar
+        function renderChats() {
+            const chatsList = document.getElementById('chatsList');
+
+            if (chats.length === 0) {
+                chatsList.innerHTML = '<div class="chats-empty">暂无会话</div>';
+                return;
+            }
+
+            chatsList.innerHTML = chats.map(chat => `
+                <div class="chat-nav-item ${chat.id === currentChatId ? 'active' : ''}"
+                     data-id="${chat.id}"
+                     data-name="${chat.name}"
+                     onclick="selectChat('${chat.id}', '${chat.name}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="chat-nav-item-name" title="${chat.name}">${chat.name}</span>
+                </div>
+            `).join('');
+        }
+
+        // Select a chat
+        async function selectChat(id, name) {
+            currentChatId = id;
+            currentContext = {
+                type: 'chat',
+                id: id,
+                name: name,
+                icon: 'chat'
+            };
+            renderChats();
+
+            // Update context display
+            if (contextName) contextName.textContent = name;
+            if (contextHintText) contextHintText.textContent = '切换到新会话';
+
+            // Call backend to set current chat
+            try {
+                await fetch(`${API_BASE_URL}/api/chats/set`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: id })
+                });
+            } catch (error) {
+                console.error('Failed to set current chat:', error);
+            }
+
+            console.log('Selected chat:', name);
+        }
+
         // State
         let currentContext = {
             type: 'product',
@@ -1174,8 +1520,8 @@
                 // Show context hint
                 if (contextHint) {
                     contextHint.style.display = 'flex';
-                    const typeLabel = currentContext.type === 'product' ? '产品' : '项目';
-                    contextHintText.textContent = `您正在${currentContext.name}${typeLabel === '产品' ? '知识库' : ''}中问答`;
+                    const typeLabel = currentContext.type === 'chat' ? '知识库' : (currentContext.type === 'product' ? '产品' : '项目');
+                    contextHintText.textContent = `您正在${currentContext.name}${typeLabel === '知识库' ? '' : typeLabel}中问答`;
                 }
 
                 // Update FAQ list
@@ -1355,6 +1701,10 @@
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 150) + 'px';
         });
+
+        // Load datasets and agents on page load
+        loadDatasets();
+        loadAgents();
     </script>
 </body>
 </html>
