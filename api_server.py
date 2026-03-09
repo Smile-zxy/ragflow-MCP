@@ -1,7 +1,8 @@
 import os
 import sys
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+import socket
 from dotenv import load_dotenv
 
 # Load .env file
@@ -21,6 +22,22 @@ RAGFLOW_BASE_URL = os.environ.get("RAGFLOW_BASE_URL", "http://localhost:9380")
 RAGFLOW_CHAT_ID = os.environ.get("RAGFLOW_CHAT_ID", "")
 
 rag_client = RAGFlow(api_key=RAGFLOW_API_KEY, base_url=RAGFLOW_BASE_URL)
+
+
+# Get server's IP address
+def get_server_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+SERVER_IP = get_server_ip()
+WEB_DIR = os.path.join(os.path.dirname(__file__), "web")
+
 
 # Cache: reuse chat and session per request context
 _chat = None
@@ -65,6 +82,73 @@ def list_datasets():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/datasets/<dataset_id>/documents", methods=["GET"])
+def list_dataset_documents(dataset_id):
+    """List all documents in a specific dataset."""
+    import requests
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        page = 1
+        page_size = 100
+        all_docs = []
+
+        while page <= 50:
+            response = requests.get(
+                f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents?page={page}&page_size={page_size}",
+                headers=headers,
+                timeout=10
+            )
+            if response.status_code != 200:
+                break
+
+            # Check if response is valid JSON
+            try:
+                data = response.json()
+            except Exception:
+                break
+
+            # Ensure data is a dict before calling .get()
+            if not isinstance(data, dict):
+                break
+
+            if data.get("code") != 0:
+                break
+
+            # RAGFlow API returns: {"code": 0, "data": {"docs": [...]}}
+            # Need to extract "docs" from "data"
+            data_obj = data.get("data", {})
+            if isinstance(data_obj, dict):
+                items = data_obj.get("docs", [])
+            else:
+                items = []
+
+            # Ensure items is a list before iterating
+            if not isinstance(items, list):
+                break
+
+            if not items:
+                break
+
+            for item in items:
+                # Ensure item is a dict before calling .get()
+                if not isinstance(item, dict):
+                    continue
+                all_docs.append({
+                    "id": item.get("id"),
+                    "name": item.get("name"),
+                    "size": item.get("size", 0),
+                    "status": item.get("status"),
+                    "created_at": item.get("created_at")
+                })
+            if len(items) < page_size:
+                break
+            page += 1
+
+        return jsonify({"success": True, "data": all_docs})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/chats", methods=["GET"])
 def list_chats():
     """List all available knowledge bases (datasets) for search."""
@@ -76,6 +160,8 @@ def list_chats():
         return jsonify({"success": True, "data": result})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 
 @app.route("/api/canvas", methods=["GET"])
@@ -165,6 +251,8 @@ def list_canvases():
         return jsonify({"success": False, "error": "No agents found"}), 500
 
 
+
+
 @app.route("/api/canvas/set", methods=["POST"])
 def set_current_canvas():
     """Set the current agent (canvas) and create/fetch its chat session."""
@@ -175,7 +263,6 @@ def set_current_canvas():
     agent_id = data.get("agent_id")
 
     print(f"[DEBUG] canvas/set called with agent_id: {agent_id}")
-    print(f"[DEBUG] request data: {data}")
 
     if not agent_id:
         return jsonify({"success": False, "error": "agent_id is required"}), 400
@@ -212,14 +299,11 @@ def set_current_canvas():
                 headers=headers, 
                 timeout=10
             )
-            print(f"[DEBUG] List sessions response status: {response.status_code}")
             if response.status_code == 200:
                 data = response.json()
-                print(f"[DEBUG] List sessions response data: {data}")
                 if data.get("code") == 0 and data.get("data"):
                     sessions = data["data"]
                     if sessions:
-                        # Use the most recent session
                         session_obj = sessions[0]
         except Exception as e:
             print(f"Error listing agent sessions: {e}")
@@ -233,8 +317,6 @@ def set_current_canvas():
                     json={"name": "Web Session"},
                     timeout=10
                 )
-                print(f"[DEBUG] Create session response status: {response.status_code}")
-                print(f"[DEBUG] Create session response: {response.text[:500]}")
                 if response.status_code == 200:
                     data = response.json()
                     if data.get("code") == 0:
@@ -245,8 +327,6 @@ def set_current_canvas():
         if session_obj:
             _session = session_obj
             _agent_chat_sessions[agent_id] = {"session": session_obj, "agent_name": agent_name}
-            print(f"[DEBUG] Stored session for agent {agent_id}: {session_obj}")
-            print(f"[DEBUG] _agent_chat_sessions now: {_agent_chat_sessions}")
             return jsonify({
                 "success": True, 
                 "chat_id": agent_id, 
@@ -254,7 +334,6 @@ def set_current_canvas():
                 "session_id": session_obj.get("id") if isinstance(session_obj, dict) else None
             })
         else:
-            print(f"[DEBUG] session_obj is None or empty!")
             return jsonify({"success": False, "error": "Could not get or create agent session"}), 500
 
     except Exception as e:
@@ -303,15 +382,19 @@ def chat_ask():
 
     try:
         # Check if we have a selected agent
-        print(f"[DEBUG] _current_agent_id: {_current_agent_id}")
-        print(f"[DEBUG] _agent_chat_sessions: {_agent_chat_sessions}")
         if _current_agent_id and _current_agent_id in _agent_chat_sessions:
-            # Use agent session for chat
+            # Use agent API for chat
             agent_session = _agent_chat_sessions[_current_agent_id]
-            session_id = agent_session.get("session", {}).get("id") if isinstance(agent_session.get("session"), dict) else agent_session.get("session")
+            session_id = None
             
+            # Get session id from cached session
+            if isinstance(agent_session.get("session"), dict):
+                session_id = agent_session["session"].get("id")
+            elif agent_session.get("session_id"):
+                session_id = agent_session.get("session_id")
+            
+            # Create new session if needed
             if new_session or not session_id:
-                # Create new session for agent
                 response = requests.post(
                     f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/sessions",
                     headers=headers,
@@ -319,9 +402,9 @@ def chat_ask():
                     timeout=30
                 )
                 if response.status_code == 200:
-                    data = response.json()
-                    if data.get("code") == 0:
-                        session_id = data.get("data", {}).get("id")
+                    result = response.json()
+                    if result.get("code") == 0:
+                        session_id = result.get("data", {}).get("id")
             
             if session_id:
                 # Send message to agent
@@ -334,7 +417,6 @@ def chat_ask():
                 if response.status_code == 200:
                     result = response.json()
                     if result.get("code") == 0:
-                        # 智能体返回格式: result["data"]["data"]["content"]
                         answer_text = result.get("data", {}).get("data", {}).get("content", "")
                         references = []
                         raw_refs = result.get("data", {}).get("reference", {}).get("chunks", [])
@@ -355,7 +437,7 @@ def chat_ask():
             else:
                 return jsonify({"success": False, "error": "No agent session available"}), 500
         
-        # Fallback to regular chat session
+        # Fallback to regular chat session (RAGFlow SDK)
         if new_session:
             global _session
             _session = None
@@ -450,7 +532,29 @@ def retrieve_knowledge():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# API endpoint to get server IP
+@app.route("/api/server-ip", methods=["GET"])
+def get_current_server_ip():
+    """Return the server's IP address for frontend configuration."""
+    return jsonify({"success": True, "ip": SERVER_IP})
+
+
+# Static file serving
+@app.route("/")
+def index():
+    """Serve the main QA page."""
+    return send_from_directory(WEB_DIR, "qa.html")
+
+
+@app.route("/<path:filename>")
+def serve_static(filename):
+    """Serve static files from the web directory."""
+    return send_from_directory(WEB_DIR, filename)
+
+
 if __name__ == "__main__":
     print(f"RAGFlow API Server starting...")
     print(f"RAGFlow Base URL: {RAGFLOW_BASE_URL}")
+    print(f"Server IP: {SERVER_IP}")
+    print(f"Access the web UI at: http://{SERVER_IP}:5000/")
     app.run(host="0.0.0.0", port=5000, debug=True)

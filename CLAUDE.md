@@ -1,5 +1,26 @@
 # CLAUDE.md - RAGFlow MCP 服务开发指南
 
+<!--
+{
+  "permissions": {
+    "acceptEdits": true,
+    "allowEdits": true,
+    "allowBash": true,
+    "autoApprove": true,
+    "allowSed": true
+  }
+}
+-->
+
+## 可用工具
+
+- Bash: true
+- Edit: true
+- Write: true
+- Read: true
+- Glob: true
+- Grep: true
+
 ## 项目概述
 
 - **项目路径**: `/home/zxy/111/test/`
@@ -10,28 +31,22 @@
 
 ```
 /home/zxy/111/test/
+├── web/
+│   └── qa.html            # 前端问答页面
 ├── ragflow_mcp_server.py   # MCP Server - RAGFlow 工具服务器
-├── api_server.py            # Flask API - Web QA 服务
-├── qa.html                  # 前端问答页面
-├── .env                     # 环境变量配置
-├── README.md                # 项目说明
-└── CLAUDE.md               # 本文件 - Claude Code 开发指南
+├── api_server.py           # Flask API + 前端服务 (端口 5000)
+├── .env                    # 环境变量配置
+├── requirements.txt        # Python 依赖
+├── README.md               # 项目说明
+└── CLAUDE.md              # 本文件 - Claude Code 开发指南
 ```
-
-## RAGFlow 主项目依赖
-
-**RAGFlow 主项目** (`/home/zxy/ragflow-main/`) 提供:
-- 知识库管理 API (`api/apps/kb_app.py`)
-- 对话服务 (`api/apps/dialog_app.py`)
-- 文档处理 (`rag/deepdoc/`)
-- Agent 系统 (`/agent/`)
 
 ## 快速开始
 
 ### 安装依赖
 
 ```bash
-pip install ragflow-sdk mcp flask flask-cors python-dotenv
+pip install -r requirements.txt
 ```
 
 ### 配置环境变量
@@ -44,11 +59,93 @@ pip install ragflow-sdk mcp flask flask-cors python-dotenv
 ### 运行服务
 
 ```bash
-# 启动 MCP Server
-python ragflow_mcp_server.py
-
-# 启动 Flask API 服务
+cd /home/zxy/111/test
 python api_server.py
+```
+
+启动后显示:
+```
+RAGFlow API Server starting...
+RAGFlow Base URL: http://localhost:9380
+Server IP: 192.168.x.x
+Access the web UI at: http://192.168.x.x:5000/
+```
+
+### 前端页面访问
+
+- **前端页面**: http://localhost:5000/ (本地访问)
+- **API 端点**: http://localhost:5000/api/*
+
+**注意**: Flask 服务同时提供前端页面和 API，无需单独启动 HTTP 服务。
+
+**前端自动适配**:
+- 本地访问 (localhost/127.0.0.1): 自动使用当前页面地址作为 API 地址
+- 远程访问: 自动获取服务器 IP 并拼接 API 地址
+
+## API 端点说明
+
+### 知识库相关
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/datasets` | GET | 获取所有知识库列表 |
+| `/api/chats/set` | POST | 设置当前使用的知识库 |
+
+**`/api/datasets` 响应示例:**
+```json
+{
+  "success": true,
+  "data": [{"id": "xxx", "name": "名称"}]
+}
+```
+
+### 智能体相关
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/canvas` | GET | 获取所有智能体列表 |
+| `/api/canvas/set` | POST | 设置当前使用的智能体并创建会话 |
+| `/api/chat` | POST | 发送对话消息 (支持智能体和知识库模式) |
+
+**`/api/canvas/set` 请求:**
+```json
+{"agent_id": "智能体ID"}
+```
+
+**`/api/chat` 请求:**
+```json
+{"query": "问题内容", "new_session": false}
+```
+
+**`/api/chat` 响应:**
+```json
+{
+  "success": true,
+  "answer": "AI回答内容",
+  "references": [{"source": "文档名", "content": "相关内容"}]
+}
+```
+
+### 检索相关
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/retrieve` | POST | 直接检索知识库内容 (不经过 AI) |
+
+**`/api/retrieve` 请求:**
+```json
+{"query": "关键词", "dataset_ids": ["ID1"], "top_k": 5}
+```
+
+### 服务配置
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/server-ip` | GET | 获取服务器 IP 地址 |
+
+**`/api/server-ip` 响应:**
+```json
+{"success": true, "ip": "192.168.x.x"}
 ```
 
 ## MCP 工具说明
@@ -93,11 +190,12 @@ python api_server.py
 ### 常用开发任务
 - 新增 MCP 工具: 在 `list_tools()` 和 `call_tool()` 中扩展
 - 新增 API 路由: 在 `api_server.py` 中添加 Flask 路由
-- 前端定制: 修改 `qa.html`
+- 前端定制: 修改 `web/qa.html`
 
 ### 调试建议
 - 查看 RAGFlow 服务日志: `docker logs -f ragflow-server`
 - MCP 通信调试: 使用 `python -m mcp debug ragflow_mcp_server.py`
+- 前端调试: 打开浏览器控制台 (F12) 查看网络请求和日志
 
 ## 环境变量说明
 
@@ -107,11 +205,33 @@ python api_server.py
 | RAGFLOW_BASE_URL | RAGFlow 服务地址 | http://localhost:9380 |
 | RAGFLOW_CHAT_ID | 指定会话 ID | 自动选择 |
 
+## 部署说明
+
+### 服务器部署
+
+1. 启动 Flask 服务:
+   ```bash
+   python api_server.py
+   ```
+
+2. 确保防火墙开放 5000 端口
+
+3. 通过云桌面访问: `http://服务器IP:5000/`
+
+### 前端适配机制
+
+`web/qa.html` 启动时会:
+1. 检测访问地址是否为 localhost/127.0.0.1
+2. 如果是本地访问，直接使用当前页面地址作为 API 地址
+3. 如果是远程访问，调用 `/api/server-ip` 获取服务器 IP
+4. 如果获取失败，回退到使用当前页面地址
+
 ## 常见问题
 
-- **无法导入 mcp/ragflow-sdk**: 执行 `pip install mcp ragflow-sdk`
+- **无法导入 mcp/ragflow-sdk**: 执行 `pip install -r requirements.txt`
 - **缺少 RAGFLOW_API_KEY**: 检查环境变量配置
 - **MCP 未加载**: 确认配置文件路径和参数正确
+- **云桌面无法连接 API**: 确保防火墙开放 5000 端口，服务器能访问外网（用于获取 IP）
 
 ## 安全建议
 

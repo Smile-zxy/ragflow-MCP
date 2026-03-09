@@ -1,0 +1,76 @@
+
+This file lists modules PyInstaller was not able to find. This does not
+necessarily mean these modules are required for running your program. Both
+Python's standard library and 3rd-party Python packages often conditionally
+import optional modules, some of which may be available only on certain
+platforms.
+
+Types of import:
+* top-level: imported at the top-level - look at these first
+* conditional: imported within an if-statement
+* delayed: imported within a function
+* optional: imported within a try-except-statement
+
+IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
+            tracking down the missing module yourself. Thanks!
+
+missing module named _winapi - imported by encodings (delayed, conditional, optional), shutil (conditional), ntpath (optional), subprocess (conditional), mimetypes (optional), multiprocessing.connection (optional), multiprocessing.spawn (delayed, conditional), multiprocessing.reduction (conditional), multiprocessing.shared_memory (conditional), multiprocessing.heap (conditional), multiprocessing.popen_spawn_win32 (top-level), asyncio.windows_events (top-level), asyncio.windows_utils (top-level), sysconfig (delayed)
+missing module named nt - imported by shutil (conditional), importlib._bootstrap_external (conditional), ntpath (optional), _colorize (delayed, conditional, optional), os (delayed, conditional, optional), ctypes (delayed, conditional), _pyrepl.windows_console (delayed, optional)
+missing module named 'collections.abc' - imported by traceback (top-level), typing (top-level), inspect (top-level), logging (top-level), importlib.resources.readers (top-level), selectors (top-level), tracemalloc (top-level), http.client (top-level), werkzeug.wrappers.request (top-level), werkzeug.datastructures.accept (top-level), werkzeug.datastructures.structures (top-level), markupsafe (top-level), typing_extensions (top-level), asyncio.base_events (top-level), asyncio.coroutines (top-level), werkzeug.datastructures.cache_control (top-level), werkzeug.datastructures.mixins (top-level), werkzeug.datastructures.auth (top-level), werkzeug.datastructures.csp (top-level), werkzeug.datastructures.etag (top-level), werkzeug.datastructures.file_storage (top-level), werkzeug.datastructures.headers (top-level), werkzeug.datastructures.range (top-level), cryptography.utils (top-level), cryptography.x509.name (top-level), cryptography.x509.base (top-level), cryptography.hazmat.bindings.openssl.binding (top-level), cryptography.x509.extensions (top-level), werkzeug.middleware.shared_data (top-level), flask.app (top-level), setuptools (top-level), setuptools._distutils.filelist (top-level), setuptools._distutils.util (top-level), jaraco.functools (top-level), more_itertools.more (top-level), setuptools._distutils._modified (top-level), setuptools._distutils.compat (top-level), setuptools._distutils.spawn (top-level), setuptools._distutils.compilers.C.base (top-level), setuptools._distutils.fancy_getopt (top-level), setuptools._reqs (top-level), setuptools.discovery (top-level), setuptools.dist (top-level), setuptools._distutils.command.bdist (top-level), setuptools._distutils.core (top-level), setuptools._distutils.cmd (top-level), setuptools._distutils.dist (top-level), configparser (top-level), setuptools._distutils.extension (top-level), setuptools.config.setupcfg (top-level), setuptools.config.expand (top-level), setuptools.config.pyprojecttoml (top-level), setuptools.config._apply_pyprojecttoml (top-level), tomllib._parser (top-level), tomli._parser (top-level), setuptools.command.egg_info (top-level), setuptools._distutils.command.build (top-level), setuptools._distutils.command.sdist (top-level), setuptools.glob (top-level), setuptools.command._requirestxt (top-level), setuptools.command.bdist_wheel (top-level), wheel.cli.convert (top-level), wheel.cli.tags (top-level), flask.cli (top-level), blinker.base (top-level), blinker._utilities (top-level), flask.typing (top-level), flask.sessions (top-level), itsdangerous.serializer (top-level), itsdangerous.signer (top-level), itsdangerous.timed (top-level), beartype.typing (conditional), beartype.typing._typingcache (top-level), beartype._cave._cavefast (top-level), beartype._data.typing.datatyping (top-level), beartype._data.cls.datacls (top-level), beartype._util.kind.maplike.utilmapfrozen (top-level), beartype._util.func.utilfuncwrap (top-level), beartype._util.api.standard.utilfunctools (top-level), beartype._util.hint.pep.proposal.pep484604 (top-level), beartype._util.text.utiltextrepr (top-level), beartype._util.error.utilerrwarn (top-level), beartype._util.func.utilfunccode (top-level), beartype._util.text.utiltextprefix (top-level), beartype._util.kind.maplike.utilmapset (top-level), beartype._util.kind.maplike.utilmaptest (top-level), beartype._util.hint.pep.utilpepsign (top-level), beartype._util.kind.sequence.utilseqmake (top-level), beartype._util.text.utiltextjoin (top-level), beartype._util.cache.pool.utilcachepool (top-level), beartype._conf.conftest (top-level), beartype._util.cls.utilclsset (top-level), beartype._util.cache.map.utilmapbig (top-level), beartype._util.func.utilfuncscope (top-level), beartype._check.convert._reduce._pep.pep484585.redpep484585itemsview (top-level), beartype._check.convert._reduce._redmap (top-level), beartype._util.hint.pep.proposal.pep484585.pep484585func (top-level), beartype._util.hint.pep.proposal.pep484585.pep484585ref (top-level), beartype._check.code.codescope (top-level), beartype._check.error._pep.pep484585.errpep484585container (top-level), beartype._check.logic.logcls (top-level), beartype._check.metadata.metacheck (top-level), beartype._check.error.errmain (top-level), beartype._check.signature._sigsnip (top-level), beartype._util.module.utilmoddeprecate (top-level), beartype.bite.kind.infercallable (top-level), beartype.bite.collection.infercollectionitems (top-level), beartype.bite.collection.infercollectionsabc (top-level), beartype._decor._nontype._wrap.wrapsnip (top-level), beartype._decor._nontype._wrap._wraputil (top-level), beartype._util.api.external.utiljaxtyping (top-level), beartype._util.func.pep.utilpep484func (top-level), beartype._util.bear.utilbearfunc (top-level), beartype._util.api.standard.utilcontextlib (top-level), beartype._decor._nontype.decornontype (top-level), beartype._util.func.arg.utilfuncargiter (top-level), beartype._util.func.utilfunctest (top-level), beartype._util.text.utiltextlabel (top-level), beartype._decor.decormain (top-level), beartype.claw._package.clawpkgtrie (top-level), beartype.claw._package._clawpkgmake (top-level), beartype.claw._package.clawpkgmain (top-level), beartype.claw._clawmain (top-level), zstandard (conditional), hpack.hpack (conditional), hyperframe.frame (conditional), hyperframe.flags (top-level), h2.settings (top-level), h2.utilities (conditional), h2.stream (conditional), h2.connection (conditional), requests.compat (top-level), socks (optional), flask_cors.core (top-level), beartype._util.path.utilpathcopy (top-level), beartype.peps._pep563 (top-level), setuptools._distutils.command.build_ext (top-level), _pyrepl.types (top-level), _pyrepl.readline (top-level), setuptools._distutils.compilers.C.msvc (top-level)
+missing module named winreg - imported by importlib._bootstrap_external (conditional), mimetypes (optional), urllib.request (delayed, conditional, optional), platform (delayed, optional), werkzeug.debug (delayed, conditional), requests.utils (delayed, conditional, optional), setuptools._distutils.compilers.C.msvc (top-level), setuptools.msvc (conditional)
+missing module named _frozen_importlib_external - imported by importlib._bootstrap (delayed), importlib (optional), importlib.abc (optional), zipimport (top-level)
+excluded module named _frozen_importlib - imported by importlib (optional), importlib.abc (optional), zipimport (top-level)
+missing module named msvcrt - imported by subprocess (optional), multiprocessing.spawn (delayed, conditional), multiprocessing.popen_spawn_win32 (top-level), asyncio.windows_events (top-level), asyncio.windows_utils (top-level), getpass (optional), click._winconsole (top-level), click._termui_impl (conditional), _pyrepl.windows_console (top-level)
+missing module named _overlapped - imported by asyncio.windows_events (top-level)
+missing module named multiprocessing.set_start_method - imported by multiprocessing (top-level), multiprocessing.spawn (top-level)
+missing module named multiprocessing.get_start_method - imported by multiprocessing (top-level), multiprocessing.spawn (top-level)
+missing module named multiprocessing.get_context - imported by multiprocessing (top-level), multiprocessing.pool (top-level), multiprocessing.managers (top-level), multiprocessing.sharedctypes (top-level)
+missing module named multiprocessing.TimeoutError - imported by multiprocessing (top-level), multiprocessing.pool (top-level)
+missing module named _scproxy - imported by urllib.request (conditional)
+missing module named multiprocessing.BufferTooShort - imported by multiprocessing (top-level), multiprocessing.connection (top-level)
+missing module named multiprocessing.AuthenticationError - imported by multiprocessing (top-level), multiprocessing.connection (top-level)
+missing module named multiprocessing.Value - imported by multiprocessing (top-level), werkzeug.debug (top-level)
+missing module named asyncio.DefaultEventLoopPolicy - imported by asyncio (delayed, conditional), asyncio.events (delayed, conditional)
+missing module named annotationlib - imported by typing_extensions (conditional), beartype._cave._cavefast (conditional), beartype._util.hint.pep.proposal.pep749 (conditional), beartype._util.hint.pep.proposal.pep649 (conditional)
+missing module named vms_lib - imported by platform (delayed, optional)
+missing module named 'java.lang' - imported by platform (delayed, optional)
+missing module named java - imported by platform (delayed)
+missing module named _wmi - imported by platform (optional)
+missing module named usercustomize - imported by site (delayed, optional)
+missing module named _typeshed - imported by werkzeug._internal (conditional), setuptools._distutils.dist (conditional), setuptools.glob (conditional), setuptools.compat.py311 (conditional)
+missing module named _manylinux - imported by packaging._manylinux (delayed, optional), setuptools._vendor.packaging._manylinux (delayed, optional), wheel.vendored.packaging._manylinux (delayed, optional)
+missing module named importlib_resources - imported by setuptools._vendor.jaraco.text (optional)
+missing module named trove_classifiers - imported by setuptools.config._validate_pyproject.formats (optional)
+missing module named pyimod02_importers - imported by /home/zxy/miniconda3/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_pkgutil.py (delayed)
+missing module named 'setuptools._distutils.msvc9compiler' - imported by cffi._shimmed_dist_utils (conditional, optional)
+missing module named imp - imported by cffi.verifier (conditional), cffi._imp_emulation (optional)
+missing module named collections.Callable - imported by collections (optional), socks (optional), cffi.api (optional)
+missing module named _dummy_thread - imported by cffi.lock (conditional, optional)
+missing module named dummy_thread - imported by cffi.lock (conditional, optional)
+missing module named thread - imported by cffi.lock (conditional, optional), cffi.cparser (conditional, optional)
+missing module named cStringIO - imported by cffi.ffiplatform (optional)
+missing module named cPickle - imported by pycparser.ply.yacc (delayed, optional)
+missing module named cffi._pycparser - imported by cffi (optional), cffi.cparser (optional)
+missing module named '_typeshed.wsgi' - imported by werkzeug.exceptions (conditional), werkzeug.http (conditional), werkzeug.wsgi (conditional), werkzeug.utils (conditional), werkzeug.wrappers.response (conditional), werkzeug.test (conditional), werkzeug.datastructures.headers (conditional), werkzeug.formparser (conditional), werkzeug.wrappers.request (conditional), werkzeug.serving (conditional), werkzeug.debug (conditional), werkzeug.middleware.shared_data (conditional), werkzeug.local (conditional), werkzeug.routing.exceptions (conditional), werkzeug.routing.map (conditional), flask.typing (conditional), flask.ctx (conditional), flask.testing (conditional), flask.cli (conditional), flask.app (conditional)
+missing module named colorama - imported by werkzeug._internal (delayed, optional), click._compat (delayed, conditional)
+missing module named 'watchdog.observers' - imported by werkzeug._reloader (delayed)
+missing module named 'watchdog.events' - imported by werkzeug._reloader (delayed)
+missing module named watchdog - imported by werkzeug._reloader (delayed)
+missing module named bcrypt - imported by cryptography.hazmat.primitives.serialization.ssh (optional)
+missing module named cryptography.x509.UnsupportedExtension - imported by cryptography.x509 (optional), urllib3.contrib.pyopenssl (optional)
+missing module named 'IPython.core' - imported by dotenv.ipython (top-level)
+missing module named IPython - imported by dotenv.ipython (top-level)
+missing module named 'numpy.typing' - imported by beartype._check.convert._reduce._nonpep.api.redapinumpy (delayed), beartype.bite.kind.inferthirdparty (delayed)
+missing module named numpy - imported by beartype._util.api.external.utilnumpy (delayed), beartype._check.convert._reduce._nonpep.api.redapinumpy (delayed), beartype.bite.kind.inferthirdparty (delayed)
+missing module named zstandard.backend_rust - imported by zstandard (conditional)
+missing module named compression - imported by urllib3.util.request (optional), urllib3.response (optional)
+missing module named 'OpenSSL.crypto' - imported by urllib3.contrib.pyopenssl (delayed, conditional)
+missing module named OpenSSL - imported by urllib3.contrib.pyopenssl (top-level), requests.help (optional)
+missing module named 'pyodide.ffi' - imported by urllib3.contrib.emscripten.fetch (delayed, optional)
+missing module named pyodide - imported by urllib3.contrib.emscripten.fetch (top-level)
+missing module named js - imported by urllib3.contrib.emscripten.fetch (top-level)
+missing module named chardet - imported by requests (optional), requests.help (optional)
+missing module named dummy_threading - imported by requests.cookies (optional)
+missing module named simplejson - imported by requests.compat (conditional, optional)
+missing module named win_inet_pton - imported by socks (conditional, optional)
+missing module named asgiref - imported by flask.app (delayed, optional)
