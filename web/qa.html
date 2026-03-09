@@ -187,10 +187,28 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            transition: max-height 0.3s ease;
         }
 
         .documents-section.hidden {
             display: none;
+        }
+
+        .documents-section.collapsed {
+            max-height: 40px !important;
+            overflow: hidden;
+        }
+
+        .documents-section.collapsed .documents-list {
+            display: none !important;
+        }
+
+        .documents-section.collapsed .documents-header {
+            margin-bottom: 0 !important;
+        }
+
+        #documentsToggleIcon.collapsed {
+            transform: rotate(-90deg);
         }
 
         .documents-header {
@@ -203,7 +221,12 @@
             font-weight: 500;
         }
 
-        .refresh-documents {
+        .documents-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .toggle-documents, .refresh-documents {
             background: none;
             border: none;
             cursor: pointer;
@@ -216,9 +239,13 @@
             transition: all 0.2s;
         }
 
-        .refresh-documents:hover {
+        .toggle-documents:hover, .refresh-documents:hover {
             background: var(--bg-hover);
             color: var(--accent-primary);
+        }
+
+        .toggle-documents {
+            transition: transform 0.3s ease;
         }
 
         .refresh-documents svg {
@@ -1076,19 +1103,26 @@
             </div>
 
             <!-- Documents in Knowledge Base -->
-            <div class="documents-section hidden" id="documentsSection">
+            <div class="documents-section" id="documentsSection">
                 <div class="documents-header">
                     <span>知识库文件</span>
-                    <button class="refresh-documents" title="刷新" onclick="loadDocuments()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M23 4v6h-6"/>
-                            <path d="M1 20v-6h6"/>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                        </svg>
-                    </button>
+                    <div class="documents-actions">
+                        <button class="toggle-documents" title="收起/展开" onclick="toggleDocuments()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="documentsToggleIcon">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </button>
+                        <button class="refresh-documents" title="刷新" onclick="loadDocuments()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6"/>
+                                <path d="M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="documents-list" id="documentsList">
-                    <div class="documents-loading">加载中...</div>
+                    <div class="documents-loading">请选择一个知识库</div>
                 </div>
             </div>
 
@@ -1193,10 +1227,12 @@
         // RAGFlow Datasets
         let datasets = [];
         let selectedDatasetId = null;
+        let datasetMessages = {}; // Store messages for each dataset separately
 
         // RAGFlow Agents (Canvas)
         let agents = [];
         let currentAgentId = null;
+        let agentMessages = {}; // Store messages for each agent separately
 
         // RAGFlow Chats
         let chats = [];
@@ -1262,6 +1298,9 @@
             if (contextName) contextName.textContent = name;
             if (contextHintText) contextHintText.textContent = '切换到智能体会话';
 
+            // Load agent's message history
+            loadAgentMessages(id);
+
             // Call backend to set current agent and create/fetch session
             try {
                 const response = await fetch(`${API_BASE_URL}/api/canvas/set`, {
@@ -1278,6 +1317,75 @@
             }
 
             console.log('Selected agent:', name);
+        }
+
+        // Load and display messages for a specific agent
+        function loadAgentMessages(agentId) {
+            chatMessages.innerHTML = '';
+
+            if (agentMessages[agentId] && agentMessages[agentId].length > 0) {
+                // Show chat UI and load messages
+                emptyState.style.display = 'none';
+                chatMessages.style.display = 'flex';
+                if (contextHint) contextHint.style.display = 'flex';
+                hasStartedChat = true;
+                faqSection.classList.add('hidden');
+
+                // Render all messages for this agent
+                agentMessages[agentId].forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.type}`;
+
+                    const iconHtml = msg.type === 'ai'
+                        ? '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+                        : '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+
+                    let refHtml = '';
+                    if (msg.references && msg.references.length > 0) {
+                        const refItems = msg.references.map((ref, i) => `
+                            <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                                <div style="font-size:12px;color:var(--accent-secondary);margin-bottom:4px;font-weight:500;">📄 ${ref.source || 'Unknown'}</div>
+                                <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;white-space:pre-wrap;">${(ref.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                            </div>
+                        `).join('');
+
+                        refHtml = `
+                            <div class="ref-toggle" style="margin-top:14px;">
+                                <div onclick="this.parentElement.classList.toggle('open')" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;font-size:13px;color:var(--text-secondary);user-select:none;transition:all 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;" class="ref-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+                                    <span>参考来源 (${msg.references.length})</span>
+                                </div>
+                                <div class="ref-content" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;margin-top:0;">
+                                    <div style="padding-top:10px;">${refItems}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    const formattedContent = msg.type === 'ai' ? formatContent(msg.content) : msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br>');
+
+                    messageDiv.innerHTML = `
+                        <div class="message-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconHtml}</svg>
+                        </div>
+                        <div class="message-content">
+                            ${formattedContent}
+                            ${refHtml}
+                        </div>
+                    `;
+
+                    chatMessages.appendChild(messageDiv);
+                });
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                // No history, show empty state
+                emptyState.style.display = 'flex';
+                chatMessages.style.display = 'none';
+                if (contextHint) contextHint.style.display = 'none';
+                hasStartedChat = false;
+                faqSection.classList.remove('hidden');
+            }
         }
 
         // Load datasets from API
@@ -1328,6 +1436,9 @@
             selectedDatasetId = id;
             renderDatasets();
 
+            // Load dataset's message history
+            loadDatasetMessages(id);
+
             // Show documents section and load documents
             const documentsSection = document.getElementById('documentsSection');
             documentsSection.classList.remove('hidden');
@@ -1336,12 +1447,103 @@
             console.log('Selected dataset:', name);
         }
 
+        // Load and display messages for a specific dataset
+        function loadDatasetMessages(datasetId) {
+            chatMessages.innerHTML = '';
+
+            if (datasetMessages[datasetId] && datasetMessages[datasetId].length > 0) {
+                // Show chat UI and load messages
+                emptyState.style.display = 'none';
+                chatMessages.style.display = 'flex';
+                if (contextHint) contextHint.style.display = 'flex';
+                hasStartedChat = true;
+                faqSection.classList.add('hidden');
+
+                // Render all messages for this dataset
+                datasetMessages[datasetId].forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.type}`;
+
+                    const iconHtml = msg.type === 'ai'
+                        ? '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+                        : '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+
+                    let refHtml = '';
+                    if (msg.references && msg.references.length > 0) {
+                        const refItems = msg.references.map((ref, i) => `
+                            <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                                <div style="font-size:12px;color:var(--accent-secondary);margin-bottom:4px;font-weight:500;">📄 ${ref.source || 'Unknown'}</div>
+                                <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;white-space:pre-wrap;">${(ref.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                            </div>
+                        `).join('');
+
+                        refHtml = `
+                            <div class="ref-toggle" style="margin-top:14px;">
+                                <div onclick="this.parentElement.classList.toggle('open')" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;font-size:13px;color:var(--text-secondary);user-select:none;transition:all 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;" class="ref-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+                                    <span>参考来源 (${msg.references.length})</span>
+                                </div>
+                                <div class="ref-content" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;margin-top:0;">
+                                    <div style="padding-top:10px;">${refItems}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    const formattedContent = msg.type === 'ai' ? formatContent(msg.content) : msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br>');
+
+                    messageDiv.innerHTML = `
+                        <div class="message-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconHtml}</svg>
+                        </div>
+                        <div class="message-content">
+                            ${formattedContent}
+                            ${refHtml}
+                        </div>
+                    `;
+
+                    chatMessages.appendChild(messageDiv);
+                });
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                // No history, show empty state
+                emptyState.style.display = 'flex';
+                chatMessages.style.display = 'none';
+                if (contextHint) contextHint.style.display = 'none';
+                hasStartedChat = false;
+                faqSection.classList.remove('hidden');
+            }
+        }
+
         // Load documents from API
         let documents = [];
+        // Toggle documents section collapse/expand
+        function toggleDocuments() {
+            const section = document.getElementById('documentsSection');
+            const icon = document.getElementById('documentsToggleIcon');
+            if (section && icon) {
+                section.classList.toggle('collapsed');
+                icon.classList.toggle('collapsed');
+            }
+        }
+
         async function loadDocuments() {
             if (!selectedDatasetId) return;
 
+            const documentsSection = document.getElementById('documentsSection');
             const documentsList = document.getElementById('documentsList');
+            
+            // Ensure expanded when loading
+            if (documentsSection) {
+                documentsSection.classList.remove('collapsed');
+            }
+            const toggleIcon = document.getElementById('documentsToggleIcon');
+            if (toggleIcon) {
+                toggleIcon.classList.remove('collapsed');
+            }
+            
+            if (!documentsList) return;
             documentsList.innerHTML = '<div class="documents-loading">加载中...</div>';
 
             try {
@@ -1771,6 +1973,20 @@
 
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Store message in agent or dataset specific history
+            if (currentAgentId) {
+                if (!agentMessages[currentAgentId]) {
+                    agentMessages[currentAgentId] = [];
+                }
+                agentMessages[currentAgentId].push({ type, content, references });
+            }
+            if (selectedDatasetId) {
+                if (!datasetMessages[selectedDatasetId]) {
+                    datasetMessages[selectedDatasetId] = [];
+                }
+                datasetMessages[selectedDatasetId].push({ type, content, references });
+            }
         }
 
         // FAQ element

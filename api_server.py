@@ -295,7 +295,7 @@ def set_current_canvas():
         # Try to list existing sessions for this agent
         try:
             response = requests.get(
-                f"{RAGFLOW_BASE_URL}/api/v1/agents/{agent_id}/sessions?page=1&page_size=10",
+                f"{RAGFLOW_BASE_URL}/api/v1/agents/{agent_id}/sessions?page=1&page_size=1&orderby=create_time&desc=true",
                 headers=headers, 
                 timeout=10
             )
@@ -382,18 +382,28 @@ def chat_ask():
 
     try:
         # Check if we have a selected agent
-        if _current_agent_id and _current_agent_id in _agent_chat_sessions:
-            # Use agent API for chat
-            agent_session = _agent_chat_sessions[_current_agent_id]
+        if _current_agent_id:
             session_id = None
-            
-            # Get session id from cached session
-            if isinstance(agent_session.get("session"), dict):
-                session_id = agent_session["session"].get("id")
-            elif agent_session.get("session_id"):
-                session_id = agent_session.get("session_id")
-            
-            # Create new session if needed
+
+            # Always get the latest session from RAGFlow (not cached)
+            # This ensures we use the same session as RAGFlow web interface
+            if not new_session:
+                try:
+                    response = requests.get(
+                        f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/sessions?page=1&page_size=1&orderby=create_time&desc=true",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if response.status_code == 200:
+                        result = response.json()
+                        if result.get("code") == 0 and result.get("data"):
+                            sessions = result["data"]
+                            if sessions:
+                                session_id = sessions[0].get("id")
+                except Exception as e:
+                    print(f"Error getting latest session: {e}")
+
+            # Create new session only if requested or no existing session
             if new_session or not session_id:
                 response = requests.post(
                     f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/sessions",
@@ -405,7 +415,7 @@ def chat_ask():
                     result = response.json()
                     if result.get("code") == 0:
                         session_id = result.get("data", {}).get("id")
-            
+
             if session_id:
                 # Send message to agent
                 response = requests.post(
