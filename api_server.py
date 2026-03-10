@@ -409,7 +409,7 @@ def chat_ask():
                     f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/sessions",
                     headers=headers,
                     json={"name": "Web Session"},
-                    timeout=30
+                    timeout=120
                 )
                 if response.status_code == 200:
                     result = response.json()
@@ -422,7 +422,7 @@ def chat_ask():
                     f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/completions",
                     headers=headers,
                     json={"question": query, "stream": False, "session_id": session_id},
-                    timeout=60
+                    timeout=120
                 )
                 if response.status_code == 200:
                     result = response.json()

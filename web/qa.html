@@ -385,11 +385,40 @@
             color: var(--text-muted);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
         }
 
         .history-context {
             color: var(--accent-secondary);
+        }
+
+        .history-delete {
+            background: none;
+            border: none;
+            padding: 2px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover .history-delete {
+            opacity: 1;
+        }
+
+        .history-delete:hover {
+            color: var(--error);
+            background: var(--bg-hover);
+        }
+
+        .history-delete svg {
+            width: 12px;
+            height: 12px;
         }
 
         .history-empty {
@@ -645,15 +674,144 @@
             flex: 1;
             display: flex;
             margin-left: 240px;
+            overflow: hidden;
         }
 
         /* Chat Container */
         .chat-container {
+            position: relative;
             flex: 1;
             display: flex;
             flex-direction: column;
-            width: 100%;
             padding: 24px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        /* Files Panel */
+        .files-panel {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .files-panel.hidden {
+            display: none;
+        }
+
+        .files-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .files-panel-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .files-panel-header h3 svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-primary);
+        }
+
+        .files-panel-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .files-panel-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .files-panel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .files-panel-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .files-panel-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-light);
+        }
+
+        .file-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-item-icon.pdf { background: #fee2e2; color: #ef4444; }
+        .file-item-icon.doc { background: #dbeafe; color: #3b82f6; }
+        .file-item-icon.txt { background: #f1f5f9; color: #64748b; }
+        .file-item-icon.default { background: var(--bg-hover); color: var(--text-secondary); }
+
+        .file-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .file-item-meta {
+            font-size: 11px;
+            color: var(--text-muted);
         }
 
         /* FAQ Section (inline) */
@@ -729,6 +887,7 @@
         /* Chat Messages */
         .chat-messages {
             flex: 1;
+            max-height: calc(100vh - 280px);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -761,7 +920,7 @@
             justify-content: center;
         }
 
-        .message.ai .message-avatar {
+        .message.ai .sage-avatar {
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
         }
 
@@ -1103,7 +1262,7 @@
             </div>
 
             <!-- Documents in Knowledge Base -->
-            <div class="documents-section" id="documentsSection">
+            <div class="documents-section hidden" id="documentsSection">
                 <div class="documents-header">
                     <span>知识库文件</span>
                     <div class="documents-actions">
@@ -1219,6 +1378,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Files Panel -->
+                <div class="files-panel hidden" id="filesPanel">
+                    <div class="files-panel-header">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            知识库文件
+                        </h3>
+                        <button class="files-panel-close" onclick="toggleFilesPanel()" title="关闭">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="files-panel-list" id="filesPanelList">
+                        <div class="files-panel-empty">请选择一个知识库查看文件</div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -1285,6 +1469,10 @@
 
         // Select an agent and switch to that agent's session
         async function selectAgent(id, name) {
+            // 选中智能体时取消知识库选中
+            selectedDatasetId = null;
+            renderDatasets();
+            
             currentAgentId = id;
             currentContext = {
                 type: 'agent',
@@ -1300,6 +1488,12 @@
 
             // Load agent's message history
             loadAgentMessages(id);
+
+            // Hide files panel when selecting agent
+            const filesPanel = document.getElementById('filesPanel');
+            if (filesPanel) {
+                filesPanel.classList.add('hidden');
+            }
 
             // Call backend to set current agent and create/fetch session
             try {
@@ -1433,16 +1627,24 @@
 
         // Select a dataset
         function selectDataset(id, name) {
+            // 选中知识库时取消智能体选中
+            currentAgentId = null;
+            renderAgents();
+            
             selectedDatasetId = id;
             renderDatasets();
 
             // Load dataset's message history
             loadDatasetMessages(id);
 
-            // Show documents section and load documents
-            const documentsSection = document.getElementById('documentsSection');
-            documentsSection.classList.remove('hidden');
+            // Load documents to files panel (sidebar hidden)
             loadDocuments();
+
+            // Show files panel in main area
+            const filesPanel = document.getElementById('filesPanel');
+            if (filesPanel) {
+                filesPanel.classList.remove('hidden');
+            }
 
             console.log('Selected dataset:', name);
         }
@@ -1528,12 +1730,26 @@
             }
         }
 
+        // Toggle files panel visibility
+        function toggleFilesPanel() {
+            const panel = document.getElementById('filesPanel');
+            if (panel) {
+                panel.classList.toggle('hidden');
+            }
+        }
+
         async function loadDocuments() {
             if (!selectedDatasetId) return;
 
             const documentsSection = document.getElementById('documentsSection');
             const documentsList = document.getElementById('documentsList');
-            
+            const filesPanelList = document.getElementById('filesPanelList');
+
+            // Update files panel
+            if (filesPanelList) {
+                filesPanelList.innerHTML = '<div class="files-panel-loading">加载中...</div>';
+            }
+
             // Ensure expanded when loading
             if (documentsSection) {
                 documentsSection.classList.remove('collapsed');
@@ -1542,7 +1758,7 @@
             if (toggleIcon) {
                 toggleIcon.classList.remove('collapsed');
             }
-            
+
             if (!documentsList) return;
             documentsList.innerHTML = '<div class="documents-loading">加载中...</div>';
 
@@ -1553,12 +1769,19 @@
                 if (data.success && data.data) {
                     documents = data.data;
                     renderDocuments();
+                    renderFilesPanel();
                 } else {
                     documentsList.innerHTML = `<div class="documents-error">${data.error || '获取文件失败'}</div>`;
+                    if (filesPanelList) {
+                        filesPanelList.innerHTML = `<div class="files-panel-empty">${data.error || '获取文件失败'}</div>`;
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load documents:', error);
                 documentsList.innerHTML = '<div class="documents-error">无法连接到服务器</div>';
+                if (filesPanelList) {
+                    filesPanelList.innerHTML = '<div class="files-panel-empty">无法连接到服务器</div>';
+                }
             }
         }
 
@@ -1580,6 +1803,62 @@
                     <span class="document-item-name" title="${doc.name}">${doc.name}</span>
                 </div>
             `).join('');
+        }
+
+        // Render files to main panel
+        function renderFilesPanel() {
+            const filesPanelList = document.getElementById('filesPanelList');
+            if (!filesPanelList) return;
+
+            if (documents.length === 0) {
+                filesPanelList.innerHTML = '<div class="files-panel-empty">暂无文件</div>';
+                return;
+            }
+
+            const getFileIcon = (name) => {
+                const ext = name.split('.').pop().toLowerCase();
+                if (ext === 'pdf') return 'pdf';
+                if (['doc', 'docx'].includes(ext)) return 'doc';
+                if (ext === 'txt') return 'txt';
+                return 'default';
+            };
+
+            const getFileIconSvg = (type) => {
+                if (type === 'pdf') return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h6"/>';
+                if (type === 'doc') return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>';
+                if (type === 'txt') return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>';
+                return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>';
+            };
+
+            filesPanelList.innerHTML = documents.map(doc => {
+                const fileType = getFileIcon(doc.name);
+                return `
+                    <div class="file-item">
+                        <div class="file-item-icon ${fileType}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                ${getFileIconSvg(fileType)}
+                            </svg>
+                        </div>
+                        <div class="file-item-info">
+                            <div class="file-item-name" title="${doc.name}">${doc.name}</div>
+                            <div class="file-item-meta">${doc.size ? formatFileSize(doc.size) : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (!bytes) return '';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unitIndex = 0;
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            return `${size.toFixed(1)} ${units[unitIndex]}`;
         }
 
         // Load chats from API
@@ -1658,7 +1937,7 @@
         let currentContext = {
             type: 'product',
             id: 'mes',
-            name: 'MES制造执行系统',
+            name: '聊天助手',
             icon: 'mes'
         };
 
@@ -1695,12 +1974,19 @@
                 chatHistoryList.innerHTML = '<div class="history-empty">暂无问答记录</div>';
                 return;
             }
-            chatHistoryList.innerHTML = chatHistory.map(item => `
+            chatHistoryList.innerHTML = chatHistory.map((item, index) => `
                 <div class="history-item" data-question="${item.question}">
                     <div class="history-question">${item.question}</div>
                     <div class="history-meta">
                         <span class="history-context">${item.context}</span>
-                        <span>${item.time}</span>
+                        <span>
+                            <span>${item.time}</span>
+                            <button class="history-delete" onclick="event.stopPropagation();deleteHistoryItem(${index})" title="删除">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </span>
                     </div>
                 </div>
             `).join('');
@@ -1712,6 +1998,12 @@
                     chatInput.focus();
                 });
             });
+        }
+
+        // 删除单条历史记录
+        function deleteHistoryItem(index) {
+            chatHistory.splice(index, 1);
+            renderHistory();
         }
 
         // Clear history
@@ -1890,20 +2182,48 @@
             });
         });
 
-        // API server base URL
-        const API_BASE_URL = 'http://localhost:5000';
+        // API server base URL - 使用当前页面地址
+        // 远程访问时自动使用服务器IP，本地访问时使用localhost
+        const API_BASE_URL = `${window.location.protocol}//${window.location.host}`;
 
         // Call RAGFlow Chat API to get AI summary + references
+        // fetch with timeout wrapper
+        async function fetchWithTimeout(url, options, timeout = 120000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(id);
+                return response;
+            } catch (err) {
+                clearTimeout(id);
+                throw err;
+            }
+        }
+
         async function fetchAnswer(question) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                let apiUrl = `${API_BASE_URL}/api/chat`;
+                let requestBody = { query: question };
+                
+                // 如果选择了知识库，使用 retrieve API 直接检索知识库
+                if (selectedDatasetId) {
+                    apiUrl = `${API_BASE_URL}/api/retrieve`;
+                    requestBody = { 
+                        query: question,
+                        dataset_ids: [selectedDatasetId],
+                        top_k: 5
+                    };
+                }
+                
+                const response = await fetchWithTimeout(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: question })
-                });
+                    body: JSON.stringify(requestBody)
+                }, 120000);
                 const data = await response.json();
                 if (data.success) {
-                    return { answer: data.answer || '暂无回答。', references: data.references || [] };
+                    return { answer: data.answer || '暂无回答。', references: data.references || data.data || [] };
                 } else {
                     return { answer: data.error || '抱歉，检索知识库时出现错误，请稍后再试。', references: [] };
                 }
