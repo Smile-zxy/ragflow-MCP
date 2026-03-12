@@ -37,13 +37,14 @@
             font-family: 'Noto Sans SC', 'Space Grotesk', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
 
         /* Layout */
         .app-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
         }
 
         /* Sidebar */
@@ -664,7 +665,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            height: 100vh;
+            min-height: 0;
         }
 
         /* Topbar */
@@ -719,7 +721,8 @@
             flex: 1;
             display: flex;
             margin-left: 240px;
-            overflow: hidden;
+            position: relative;
+            min-height: 0;
         }
 
         /* Chat Container */
@@ -731,20 +734,32 @@
             padding: 24px;
             min-width: 0;
             overflow: hidden;
+            height: 100%;
         }
 
         /* Files Panel */
         .files-panel {
-            width: 320px;
+            width: 0;
+            min-width: 0;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transition: width 0.3s ease, min-width 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .files-panel:not(.hidden) {
+            width: 320px;
+            min-width: 320px;
+            opacity: 1;
         }
 
         .files-panel.hidden {
-            display: none;
+            width: 0;
+            min-width: 0;
+            opacity: 0;
         }
 
         .files-panel-header {
@@ -768,6 +783,94 @@
             width: 18px;
             height: 18px;
             color: var(--accent-primary);
+        }
+
+        /* Files Panel Toggle Button */
+        .files-panel-toggle {
+            position: absolute;
+            top: 86px;
+            right: 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: all 0.2s;
+        }
+
+        .files-panel-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .files-panel-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .files-panel-toggle.hidden {
+            display: none;
+        }
+
+        /* Jump to Previous Question Button */
+        .jump-to-prev-question {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 12px 20px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            z-index: 50;
+            transition: all 0.2s;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .jump-to-prev-question:hover {
+            background: var(--bg-hover);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .jump-to-prev-question svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .jump-to-prev-question.hidden {
+            display: none;
+        }
+
+        .jump-to-prev-question.highlight {
+            animation: highlight-pulse 2s ease;
+        }
+
+        @keyframes highlight-pulse {
+            0%, 100% { box-shadow: none; }
+            50% { box-shadow: 0 0 20px var(--accent-primary); }
+        }
+
+        .message.highlight {
+            animation: message-highlight 2s ease;
+        }
+
+        @keyframes message-highlight {
+            0%, 100% { background: transparent; }
+            50% { background: rgba(59, 130, 246, 0.1); }
         }
 
         .files-panel-close {
@@ -864,6 +967,7 @@
             display: flex;
             flex-direction: column;
             margin-bottom: 16px;
+            flex-shrink: 0;
         }
 
         .faq-section.hidden {
@@ -932,12 +1036,12 @@
         /* Chat Messages */
         .chat-messages {
             flex: 1;
-            max-height: calc(100vh - 280px);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 20px;
             padding-bottom: 20px;
+            min-height: 0;
         }
 
         .message {
@@ -1025,6 +1129,9 @@
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 16px;
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
             margin-top: auto;
         }
 
@@ -1254,6 +1361,135 @@
             border-color: var(--border-light) !important;
             color: var(--text-primary) !important;
         }
+
+        /* File Preview Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .modal-error {
+            color: var(--error);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chunk-item {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .chunk-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .chunk-index {
+            font-size: 12px;
+            color: var(--accent-primary);
+            font-weight: 500;
+        }
+
+        .chunk-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .file-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            background: var(--bg-hover);
+        }
     </style>
 </head>
 <body>
@@ -1385,7 +1621,23 @@
 
             <div class="main-area">
                 <!-- Chat Container -->
-                <div class="chat-container">
+                <div class="chat-container" id="chatContainer">
+                    <!-- Files Panel Toggle Button -->
+                    <button class="files-panel-toggle" id="filesPanelToggle" onclick="toggleFilesPanel()" title="知识库文件">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </button>
+                    <!-- Jump to Previous Question Button -->
+                    <button class="jump-to-prev-question hidden" id="jumpToPrevQuestion" onclick="jumpToPreviousQuestion()" title="跳转到上一个提问">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        <span>上一个提问</span>
+                    </button>
                     <!-- Empty State -->
                     <div class="empty-state" id="emptyState">
                         <div class="empty-state-icon">
@@ -1541,8 +1793,6 @@
         async function selectAgent(id, name) {
             // 选中智能体时取消知识库选中
             selectedDatasetId = null;
-            renderDatasets();
-            
             currentAgentId = id;
             currentContext = {
                 type: 'agent',
@@ -1550,6 +1800,21 @@
                 name: name,
                 icon: 'agent'
             };
+            
+            // First hide files panel and hide toggle button (before any rendering)
+            const filesPanel = document.getElementById('filesPanel');
+            const toggleBtn = document.getElementById('filesPanelToggle');
+            if (filesPanel) {
+                filesPanel.classList.add('hidden');
+            }
+            // Hide toggle button in agent mode
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+                console.log('Agent mode - toggle button hidden');
+            }
+
+            // Then update UI
+            renderDatasets();
             renderAgents();
 
             // Update context display
@@ -1558,12 +1823,6 @@
 
             // Load agent's message history
             loadAgentMessages(id);
-
-            // Hide files panel when selecting agent
-            const filesPanel = document.getElementById('filesPanel');
-            if (filesPanel) {
-                filesPanel.classList.add('hidden');
-            }
 
             // Call backend to set current agent and create/fetch session
             try {
@@ -1641,7 +1900,12 @@
                     chatMessages.appendChild(messageDiv);
                 });
 
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 滚动到新消息的顶部
+                const lastMessage = chatMessages.lastElementChild;
+                if (lastMessage) {
+                    chatMessages.scrollTop = lastMessage.offsetTop;
+                }
             } else {
                 // No history, show empty state
                 emptyState.style.display = 'flex';
@@ -1699,8 +1963,6 @@
         function selectDataset(id, name) {
             // 选中知识库时取消智能体选中
             currentAgentId = null;
-            renderAgents();
-            
             selectedDatasetId = id;
             
             // Set current context for knowledge base
@@ -1711,7 +1973,21 @@
                 icon: 'chat'
             };
             
+            // First show files panel and show toggle button (before any rendering)
+            const filesPanel = document.getElementById('filesPanel');
+            const toggleBtn = document.getElementById('filesPanelToggle');
+            if (filesPanel) {
+                filesPanel.classList.remove('hidden');
+            }
+            // Show toggle button in dataset mode
+            if (toggleBtn) {
+                toggleBtn.style.display = 'flex';
+                console.log('Dataset mode - toggle button shown');
+            }
+
+            // Then update UI
             renderDatasets();
+            renderAgents();
 
             // Update context display
             if (contextName) contextName.textContent = name;
@@ -1722,12 +1998,6 @@
 
             // Load documents to files panel (sidebar hidden)
             loadDocuments();
-
-            // Show files panel in main area
-            const filesPanel = document.getElementById('filesPanel');
-            if (filesPanel) {
-                filesPanel.classList.remove('hidden');
-            }
 
             console.log('Selected dataset:', name);
         }
@@ -1790,7 +2060,12 @@
                     chatMessages.appendChild(messageDiv);
                 });
 
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 滚动到新消息的顶部
+                const lastMessage = chatMessages.lastElementChild;
+                if (lastMessage) {
+                    chatMessages.scrollTop = lastMessage.offsetTop;
+                }
             } else {
                 // No history, show empty state
                 emptyState.style.display = 'flex';
@@ -1816,8 +2091,45 @@
         // Toggle files panel visibility
         function toggleFilesPanel() {
             const panel = document.getElementById('filesPanel');
+            const toggleBtn = document.getElementById('filesPanelToggle');
             if (panel) {
                 panel.classList.toggle('hidden');
+                // Toggle button always visible in dataset mode
+                if (toggleBtn && selectedDatasetId) {
+                    toggleBtn.style.display = 'flex';
+                }
+            }
+        }
+
+        // Jump to previous question function
+        let previousQuestionPositions = [];
+
+        function jumpToPreviousQuestion() {
+            const messages = document.querySelectorAll('.message.user');
+            if (messages.length <= 1) return;
+
+            // Find the second-to-last user message
+            const prevQuestion = messages[messages.length - 2];
+            if (prevQuestion) {
+                prevQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add highlight effect
+                prevQuestion.classList.add('highlight');
+                setTimeout(() => {
+                    prevQuestion.classList.remove('highlight');
+                }, 2000);
+            }
+        }
+
+        function updateJumpButtonVisibility() {
+            const jumpBtn = document.getElementById('jumpToPrevQuestion');
+            if (!jumpBtn) return;
+
+            const messages = document.querySelectorAll('.message.user');
+            // Show button if there are more than 1 user messages
+            if (messages.length > 1) {
+                jumpBtn.classList.remove('hidden');
+            } else {
+                jumpBtn.classList.add('hidden');
             }
         }
 
@@ -1916,7 +2228,7 @@
             filesPanelList.innerHTML = documents.map(doc => {
                 const fileType = getFileIcon(doc.name);
                 return `
-                    <div class="file-item">
+                    <div class="file-item" onclick="showFilePreviewById('${doc.id}', '${doc.name}')">
                         <div class="file-item-icon ${fileType}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 ${getFileIconSvg(fileType)}
@@ -2136,12 +2448,16 @@
                         if (contextName) contextName.textContent = session.context;
                         if (contextHintText) contextHintText.textContent = '切换到智能体会话';
                         
-                        // Hide files panel
+                        // Hide files panel and hide toggle button
                         const filesPanel = document.getElementById('filesPanel');
+                        const toggleBtn = document.getElementById('filesPanelToggle');
                         if (filesPanel) {
                             filesPanel.classList.add('hidden');
                         }
-                        
+                        if (toggleBtn) {
+                            toggleBtn.style.display = 'none';
+                        }
+
                         // Load messages from sessionMessages using sessionId
                         const agentSessionId = session.sessionId;
                         
@@ -2195,12 +2511,16 @@
                         if (contextName) contextName.textContent = session.context;
                         if (contextHintText) contextHintText.textContent = '切换到知识库会话';
                         
-                        // Show files panel
+                        // Show files panel and show toggle button
                         const filesPanel = document.getElementById('filesPanel');
+                        const toggleBtn = document.getElementById('filesPanelToggle');
                         if (filesPanel) {
                             filesPanel.classList.remove('hidden');
                         }
-                        
+                        if (toggleBtn) {
+                            toggleBtn.style.display = 'flex';
+                        }
+
                         // Load messages from sessionMessages using sessionId
                         const datasetSessionId = session.sessionId;
                         
@@ -2597,7 +2917,12 @@
             `;
 
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+                // 滚动到新消息的顶部
+                const lastMessage = chatMessages.lastElementChild;
+                if (lastMessage) {
+                    chatMessages.scrollTop = lastMessage.offsetTop;
+                }
 
             // Store message in agent/dataset messages for fallback
             if (currentAgentId) {
@@ -2621,6 +2946,9 @@
                 // Initialize sessionMessages for this session if not exists
                 sessionMessages[currentSessionId] = [{ type, content, references }];
             }
+
+            // Update jump button visibility
+            updateJumpButtonVisibility();
         }
 
         // Render message directly without storing (for loading from history)
@@ -2667,7 +2995,15 @@
             `;
 
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+                // 滚动到新消息的顶部
+                const lastMessage = chatMessages.lastElementChild;
+                if (lastMessage) {
+                    chatMessages.scrollTop = lastMessage.offsetTop;
+                }
+
+            // Update jump button visibility
+            updateJumpButtonVisibility();
         }
 
         // FAQ element
@@ -2695,23 +3031,16 @@
                 currentMessages = datasetMessages[selectedDatasetId] || [];
             }
             const isFirstMessage = isNewSession || currentMessages.length === 0;
-            
-            // Add user message first
-            addMessage('user', message);
 
-            // Get updated messages after adding user message
-            if (currentContext.type === 'agent' && currentAgentId) {
-                currentMessages = agentMessages[currentAgentId] || [];
-            } else if ((currentContext.type === 'dataset' || currentContext.type === 'chat') && selectedDatasetId) {
-                currentMessages = datasetMessages[selectedDatasetId] || [];
-            }
-
-            // After adding user message, add to session history if first message
+            // IMPORTANT: Create new session BEFORE adding message, so message goes to correct session
             if (isFirstMessage) {
                 addToSessionHistory(message, currentContext.name, currentContext.type, currentContext.id, currentMessages);
                 // Reset new session flag after creating history
                 isNewSession = false;
             }
+
+            // Add user message (now currentSessionId is set if this is a new session)
+            addMessage('user', message);
 
             // Clear input
             chatInput.value = '';
@@ -2739,7 +3068,12 @@
                 </div>
             `;
             chatMessages.appendChild(typingDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+                // 滚动到新消息的顶部
+                const lastMessage = chatMessages.lastElementChild;
+                if (lastMessage) {
+                    chatMessages.scrollTop = lastMessage.offsetTop;
+                }
 
             // Call API to get real answer
             fetchAnswer(message).then(result => {
@@ -2774,6 +3108,121 @@
         // Load datasets and agents on page load
         loadDatasets();
         loadAgents();
+
+        // Initially hide toggle button (files panel is hidden by default)
+        const toggleBtn = document.getElementById('filesPanelToggle');
+        if (toggleBtn) {
+            toggleBtn.style.display = 'none';
+        }
+
+        // File Preview Modal Functions
+        let filePreviewModal = null;
+
+        function showFilePreviewById(docId, docName) {
+            // Get modal element inside function (ensure DOM is ready)
+            if (!filePreviewModal) {
+                filePreviewModal = document.getElementById('filePreviewModal');
+            }
+            if (!filePreviewModal) {
+                console.error('Modal element not found');
+                return;
+            }
+
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = docName;
+            modalBody.innerHTML = '<div class="modal-loading">加载中...</div>';
+            filePreviewModal.classList.add('active');
+
+            fetchDocumentContent(docId);
+        }
+
+        function showFilePreview(doc) {
+            // Legacy support
+            showFilePreviewById(doc.id, doc.name);
+        }
+
+        function closeFilePreview() {
+            filePreviewModal.classList.remove('active');
+        }
+
+        async function fetchDocumentContent(documentId) {
+            const modalBody = document.getElementById('modalBody');
+
+            if (!selectedDatasetId) {
+                modalBody.innerHTML = '<div class="modal-error">请先选择一个知识库</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/datasets/${selectedDatasetId}/documents/${documentId}/content`);
+                const data = await response.json();
+
+                const chunks = data.data && data.data.chunks ? data.data.chunks : [];
+                if (data.success && chunks.length > 0) {
+                    modalBody.innerHTML = chunks.map((chunk, index) => `
+                        <div class="chunk-item">
+                            <div class="chunk-header">
+                                <span class="chunk-index">片段 ${index + 1}</span>
+                            </div>
+                            <div class="chunk-content">${escapeHtml(chunk.content || chunk.text || '')}</div>
+                        </div>
+                    `).join('');
+                } else if (data.success && data.data && data.data.content) {
+                    // Handle raw content
+                    modalBody.innerHTML = `<div class="chunk-item">
+                        <div class="chunk-content">${escapeHtml(data.data.content)}</div>
+                    </div>`;
+                } else {
+                    modalBody.innerHTML = `<div class="modal-error">${data.error || '无法获取文档内容'}</div>`;
+                }
+            } catch (error) {
+                console.error('Failed to load document content:', error);
+                modalBody.innerHTML = '<div class="modal-error">无法连接到服务器</div>';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal on overlay click (use event delegation)
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('modal-overlay')) {
+                closeFilePreview();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('filePreviewModal');
+                if (modal && modal.classList.contains('active')) {
+                    closeFilePreview();
+                }
+            }
+        });
     </script>
+
+    <!-- File Preview Modal -->
+    <div class="modal-overlay" id="filePreviewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">文档预览</h3>
+                <button class="modal-close" onclick="closeFilePreview()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="modal-loading">加载中...</div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
