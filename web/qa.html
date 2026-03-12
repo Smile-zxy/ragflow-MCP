@@ -367,6 +367,12 @@
             background: var(--bg-hover);
         }
 
+        .history-item.active {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+            box-shadow: 0 0 0 1px var(--accent-primary);
+        }
+
         .history-item:last-child {
             margin-bottom: 0;
         }
@@ -391,6 +397,45 @@
 
         .history-context {
             color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-type-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .new-session-btn {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .new-session-btn:hover {
+            background: var(--accent-glow);
+        }
+
+        .new-session-btn svg {
+            width: 14px;
+            height: 14px;
         }
 
         .history-delete {
@@ -1287,6 +1332,13 @@
 
             <!-- Chat History -->
             <div class="chat-history">
+                <button class="new-session-btn" onclick="createNewSession()" title="新建会话">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    新建会话
+                </button>
                 <div class="chat-history-header">
                     <span>问答历史</span>
                     <button class="clear-history" title="清空历史">
@@ -1421,6 +1473,24 @@
         // RAGFlow Chats
         let chats = [];
         let currentChatId = null;
+        
+        // New session flag
+        let isNewSession = false;
+        
+        // Store messages for each session separately
+        // Key: unique session ID
+        let sessionMessages = {};
+        
+        // Generate unique session ID
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Track current session ID for storing messages
+        let currentSessionId = null;
+
+        // Chat sessions for history
+        let chatSessions = []; // Store all session histories
 
         // Load agents from RAGFlow /v1/canvas API
         async function loadAgents() {
@@ -1632,7 +1702,20 @@
             renderAgents();
             
             selectedDatasetId = id;
+            
+            // Set current context for knowledge base
+            currentContext = {
+                type: 'dataset',
+                id: id,
+                name: name,
+                icon: 'chat'
+            };
+            
             renderDatasets();
+
+            // Update context display
+            if (contextName) contextName.textContent = name;
+            if (contextHintText) contextHintText.textContent = '切换到知识库会话';
 
             // Load dataset's message history
             loadDatasetMessages(id);
@@ -1958,27 +2041,61 @@
         // Chat history management
         let chatHistory = [];
 
-        function addToHistory(question, contextName) {
+        // Add to chat sessions - only called on first message of a new session
+        function addToSessionHistory(question, contextName, contextType, contextId, messagesArray) {
+            // Create a new session with unique ID
+            const sessionId = generateSessionId();
+            
+            // Set current session ID for storing messages
+            currentSessionId = sessionId;
+            
+            // Create new session history with session ID
             const historyItem = {
                 question: question,
+                firstQuestion: question,
                 context: contextName,
+                contextType: contextType || 'unknown',
+                contextId: contextId || null,
+                sessionId: sessionId,
                 time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
             };
-            chatHistory.unshift(historyItem);
-            if (chatHistory.length > 10) chatHistory.pop(); // Keep max 10 items
+            chatSessions.unshift(historyItem);
+            if (chatSessions.length > 20) chatSessions.pop(); // Keep max 20 sessions
+            
+            // Store the messages with the unique session ID
+            if (messagesArray && messagesArray.length > 0) {
+                sessionMessages[sessionId] = [...messagesArray];
+            }
+            
             renderHistory();
         }
 
         function renderHistory() {
-            if (chatHistory.length === 0) {
+            if (chatSessions.length === 0) {
                 chatHistoryList.innerHTML = '<div class="history-empty">暂无问答记录</div>';
                 return;
             }
-            chatHistoryList.innerHTML = chatHistory.map((item, index) => `
-                <div class="history-item" data-question="${item.question}">
-                    <div class="history-question">${item.question}</div>
+
+            const getTypeLabel = (type) => {
+                if (type === 'agent') return '智能体';
+                if (type === 'dataset' || type === 'chat') return '知识库';
+                return '未知';
+            };
+
+            chatHistoryList.innerHTML = chatSessions.map((item, index) => `
+                <div class="history-item ${item.sessionId === currentSessionId ? 'active' : ''}"
+                     data-index="${index}"
+                     data-session-id="${item.sessionId || ''}"
+                     data-question="${item.firstQuestion || item.question}"
+                     data-context-type="${item.contextType || 'unknown'}"
+                     data-context-id="${item.contextId || ''}"
+                     data-context-name="${item.context}">
+                    <div class="history-question">${item.firstQuestion || item.question}</div>
                     <div class="history-meta">
-                        <span class="history-context">${item.context}</span>
+                        <span class="history-context">
+                            ${item.contextType && item.contextType !== 'unknown' ? `<span class="history-type-badge">${getTypeLabel(item.contextType)}</span>` : ''}
+                            ${item.context}
+                        </span>
                         <span>
                             <span>${item.time}</span>
                             <button class="history-delete" onclick="event.stopPropagation();deleteHistoryItem(${index})" title="删除">
@@ -1991,26 +2108,214 @@
                 </div>
             `).join('');
 
-            // Add click handlers
+            // Add click handlers - load session history
             document.querySelectorAll('.history-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    chatInput.value = this.dataset.question;
-                    chatInput.focus();
+                item.addEventListener('click', async function() {
+                    const index = parseInt(this.dataset.index);
+                    const session = chatSessions[index];
+                    
+                    if (!session) return;
+
+                    // Switch to the corresponding agent or dataset
+                    if (session.contextType === 'agent' && session.contextId) {
+                        // Set current context without calling selectAgent (to avoid loading wrong messages)
+                        selectedDatasetId = null;
+                        renderDatasets();
+                        
+                        currentAgentId = session.contextId;
+                        renderAgents();
+                        
+                        currentContext = {
+                            type: 'agent',
+                            id: session.contextId,
+                            name: session.context,
+                            icon: 'agent'
+                        };
+                        
+                        // Update UI
+                        if (contextName) contextName.textContent = session.context;
+                        if (contextHintText) contextHintText.textContent = '切换到智能体会话';
+                        
+                        // Hide files panel
+                        const filesPanel = document.getElementById('filesPanel');
+                        if (filesPanel) {
+                            filesPanel.classList.add('hidden');
+                        }
+                        
+                        // Load messages from sessionMessages using sessionId
+                        const agentSessionId = session.sessionId;
+                        
+                        // First clear any existing messages
+                        chatMessages.innerHTML = '';
+                        
+                        if (agentSessionId && sessionMessages[agentSessionId] && sessionMessages[agentSessionId].length > 0) {
+                            currentSessionId = agentSessionId;
+                            emptyState.style.display = 'none';
+                            chatMessages.style.display = 'flex';
+                            if (contextHint) contextHint.style.display = 'flex';
+                            hasStartedChat = true;
+                            faqSection.classList.add('hidden');
+                            
+                            // Directly render messages without storing them
+                            sessionMessages[agentSessionId].forEach(msg => {
+                                renderMessageDirect(msg.type, msg.content, msg.references);
+                            });
+                        } else {
+                            // Fallback: load from agentMessages
+                            currentSessionId = null;
+                            loadAgentMessages(session.contextId);
+                        }
+                        
+                        // Update history active state
+                        renderHistory();
+                        
+                    } else if ((session.contextType === 'dataset' || session.contextType === 'chat') && session.contextId) {
+                        // Set current context without calling selectDataset
+                        currentAgentId = null;
+                        selectedDatasetId = session.contextId;
+                        renderAgents();
+                        renderDatasets();
+                        
+                        // Also set currentContext for proper message handling
+                        currentContext = {
+                            type: 'dataset',
+                            id: session.contextId,
+                            name: session.context,
+                            icon: 'chat'
+                        };
+                        
+                        currentContext = {
+                            type: 'dataset',
+                            id: session.contextId,
+                            name: session.context,
+                            icon: 'chat'
+                        };
+                        
+                        // Update UI
+                        if (contextName) contextName.textContent = session.context;
+                        if (contextHintText) contextHintText.textContent = '切换到知识库会话';
+                        
+                        // Show files panel
+                        const filesPanel = document.getElementById('filesPanel');
+                        if (filesPanel) {
+                            filesPanel.classList.remove('hidden');
+                        }
+                        
+                        // Load messages from sessionMessages using sessionId
+                        const datasetSessionId = session.sessionId;
+                        
+                        // First clear any existing messages
+                        chatMessages.innerHTML = '';
+                        
+                        if (datasetSessionId && sessionMessages[datasetSessionId] && sessionMessages[datasetSessionId].length > 0) {
+                            currentSessionId = datasetSessionId;
+                            emptyState.style.display = 'none';
+                            chatMessages.style.display = 'flex';
+                            if (contextHint) contextHint.style.display = 'flex';
+                            hasStartedChat = true;
+                            faqSection.classList.add('hidden');
+                            
+                            // Directly render messages without storing them
+                            sessionMessages[datasetSessionId].forEach(msg => {
+                                renderMessageDirect(msg.type, msg.content, msg.references);
+                            });
+                        } else {
+                            // Fallback: load from datasetMessages
+                            currentSessionId = null;
+                            loadDatasetMessages(session.contextId);
+                        }
+                        
+                        // Update history active state
+                        renderHistory();
+                    }
                 });
             });
         }
 
         // 删除单条历史记录
         function deleteHistoryItem(index) {
-            chatHistory.splice(index, 1);
+            // Get the session before deleting
+            const session = chatSessions[index];
+            
+            // If this is the currently displayed session, clear the display
+            if (session && session.sessionId === currentSessionId) {
+                chatMessages.innerHTML = '';
+                emptyState.style.display = 'flex';
+                chatMessages.style.display = 'none';
+                if (contextHint) contextHint.style.display = 'none';
+                hasStartedChat = false;
+                faqSection.classList.remove('hidden');
+                currentSessionId = null;
+            }
+            
+            if (session && session.sessionId) {
+                // Delete the messages for this session
+                delete sessionMessages[session.sessionId];
+            }
+            chatSessions.splice(index, 1);
             renderHistory();
         }
 
         // Clear history
         document.querySelector('.clear-history').addEventListener('click', function() {
-            chatHistory = [];
+            // Delete all session messages
+            chatSessions.forEach(session => {
+                if (session.sessionId) {
+                    delete sessionMessages[session.sessionId];
+                }
+            });
+            chatSessions = [];
+            currentSessionId = null;
             renderHistory();
         });
+
+        // Create new session - clear current messages
+        function createNewSession() {
+            // Save current messages with a new session ID before clearing
+            // Don't add to chatSessions here - it's done when user asks first question
+            if (currentAgentId && agentMessages[currentAgentId] && agentMessages[currentAgentId].length > 0) {
+                const sessionId = generateSessionId();
+                sessionMessages[sessionId] = [...agentMessages[currentAgentId]];
+                
+                // Clear current messages
+                agentMessages[currentAgentId] = [];
+            }
+            if (selectedDatasetId && datasetMessages[selectedDatasetId] && datasetMessages[selectedDatasetId].length > 0) {
+                const sessionId = generateSessionId();
+                sessionMessages[sessionId] = [...datasetMessages[selectedDatasetId]];
+                
+                // Clear current messages
+                datasetMessages[selectedDatasetId] = [];
+            }
+            
+            // Reset current session ID
+            currentSessionId = null;
+            
+            // Clear current messages display
+            chatMessages.innerHTML = '';
+            
+            // Show empty state
+            emptyState.style.display = 'flex';
+            chatMessages.style.display = 'none';
+            if (contextHint) contextHint.style.display = 'none';
+            hasStartedChat = false;
+            
+            // Show FAQ section
+            faqSection.classList.remove('hidden');
+            
+            // Set new session flag
+            isNewSession = true;
+            
+            // Update context hint
+            if (currentContext && currentContext.name) {
+                if (contextHintText) contextHintText.textContent = '与 ' + currentContext.name + ' 开始新会话';
+            }
+            
+            // Focus on input
+            chatInput.focus();
+            
+            console.log('New session created');
+        }
 
         // Initialize history
         renderHistory();
@@ -2294,7 +2599,7 @@
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Store message in agent or dataset specific history
+            // Store message in agent/dataset messages for fallback
             if (currentAgentId) {
                 if (!agentMessages[currentAgentId]) {
                     agentMessages[currentAgentId] = [];
@@ -2307,6 +2612,62 @@
                 }
                 datasetMessages[selectedDatasetId].push({ type, content, references });
             }
+            
+            // Store message in sessionMessages only if currentSessionId is set
+            // and matches a valid session
+            if (currentSessionId && sessionMessages[currentSessionId]) {
+                sessionMessages[currentSessionId].push({ type, content, references });
+            } else if (currentSessionId) {
+                // Initialize sessionMessages for this session if not exists
+                sessionMessages[currentSessionId] = [{ type, content, references }];
+            }
+        }
+
+        // Render message directly without storing (for loading from history)
+        function renderMessageDirect(type, content, references) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const iconHtml = type === 'ai'
+                ? '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+                : '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+
+            let refHtml = '';
+            if (references && references.length > 0) {
+                const refItems = references.map((ref, i) => `
+                    <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                        <div style="font-size:12px;color:var(--accent-secondary);margin-bottom:4px;font-weight:500;">📄 ${ref.source || 'Unknown'}</div>
+                        <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;white-space:pre-wrap;">${(ref.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                    </div>
+                `).join('');
+
+                refHtml = `
+                    <div class="ref-toggle" style="margin-top:14px;">
+                        <div onclick="this.parentElement.classList.toggle('open')" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;font-size:13px;color:var(--text-secondary);user-select:none;transition:all 0.2s;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;" class="ref-arrow"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>参考来源 (${references.length})</span>
+                        </div>
+                        <div class="ref-content" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;margin-top:0;">
+                            <div style="padding-top:10px;">${refItems}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const formattedContent = type === 'ai' ? formatContent(content) : content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br>');
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconHtml}</svg>
+                </div>
+                <div class="message-content">
+                    ${formattedContent}
+                    ${refHtml}
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // FAQ element
@@ -2326,11 +2687,31 @@
             // Hide FAQ section when there's chat content
             faqSection.classList.add('hidden');
 
-            // Add user message
+            // Check if this is the first message - either no messages or new session flag is set
+            let currentMessages = null;
+            if (currentContext.type === 'agent' && currentAgentId) {
+                currentMessages = agentMessages[currentAgentId] || [];
+            } else if ((currentContext.type === 'dataset' || currentContext.type === 'chat') && selectedDatasetId) {
+                currentMessages = datasetMessages[selectedDatasetId] || [];
+            }
+            const isFirstMessage = isNewSession || currentMessages.length === 0;
+            
+            // Add user message first
             addMessage('user', message);
 
-            // Add to history
-            addToHistory(message, currentContext.name);
+            // Get updated messages after adding user message
+            if (currentContext.type === 'agent' && currentAgentId) {
+                currentMessages = agentMessages[currentAgentId] || [];
+            } else if ((currentContext.type === 'dataset' || currentContext.type === 'chat') && selectedDatasetId) {
+                currentMessages = datasetMessages[selectedDatasetId] || [];
+            }
+
+            // After adding user message, add to session history if first message
+            if (isFirstMessage) {
+                addToSessionHistory(message, currentContext.name, currentContext.type, currentContext.id, currentMessages);
+                // Reset new session flag after creating history
+                isNewSession = false;
+            }
 
             // Clear input
             chatInput.value = '';

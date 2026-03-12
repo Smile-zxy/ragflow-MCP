@@ -149,10 +149,96 @@ def list_dataset_documents(dataset_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route("/api/chats", methods=["GET"])
-def list_chats():
-    """List all available knowledge bases (datasets) for search."""
+@app.route("/api/datasets/<dataset_id>/documents/<document_id>/content", methods=["GET"])
+def get_document_content(dataset_id, document_id):
+    """Get the content/chunks of a specific document."""
+    import requests
     try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+
+        # First, get document info
+        doc_response = requests.get(
+            f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents/{document_id}",
+            headers=headers,
+            timeout=10
+        )
+
+        doc_name = "Unknown"
+        if doc_response.status_code == 200:
+            try:
+                doc_data = doc_response.json()
+                if doc_data.get("code") == 0:
+                    doc_name = doc_data.get("data", {}).get("name", "Unknown")
+            except Exception:
+                pass
+
+        # Get document chunks
+        chunks_result = []
+        page = 1
+        page_size = 100
+
+        while page <= 50:
+            try:
+                chunks_response = requests.get(
+                    f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents/{document_id}/chunks?page={page}&page_size={page_size}",
+                    headers=headers,
+                    timeout=10
+                )
+
+                if chunks_response.status_code != 200:
+                    break
+
+                try:
+                    chunks_data = chunks_response.json()
+                except Exception:
+                    break
+
+                if chunks_data.get("code") != 0:
+                    break
+
+                chunks_list = chunks_data.get("data", {}).get("chunks", [])
+                if not chunks_list:
+                    break
+
+                for chunk in chunks_list:
+                    if isinstance(chunk, dict):
+                        chunks_result.append({
+                            "id": chunk.get("id"),
+                            "content": chunk.get("content", ""),
+                            "position": chunk.get("position", ""),
+                        })
+
+                if len(chunks_list) < page_size:
+                    break
+                page += 1
+            except Exception as e:
+                print(f"Error getting chunks: {e}")
+                break
+
+        # If no chunks found, try to get the document content directly
+        if not chunks_result and doc_response.status_code == 200:
+            try:
+                doc_data = doc_response.json()
+                if doc_data.get("code") == 0:
+                    doc_info = doc_data.get("data", {})
+                    chunks_result.append({
+                        "id": document_id,
+                        "content": doc_info.get("content", ""),
+                        "position": "1",
+                    })
+            except Exception:
+                pass
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "name": doc_name,
+                "chunks": chunks_result
+            }
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
         datasets = rag_client.list_datasets()
         result = []
         for ds in datasets:
@@ -547,6 +633,60 @@ def retrieve_knowledge():
 def get_current_server_ip():
     """Return the server's IP address for frontend configuration."""
     return jsonify({"success": True, "ip": SERVER_IP})
+
+
+# API endpoint to get chat session messages
+@app.route("/api/chat/<chat_id>/messages", methods=["GET"])
+def get_chat_messages(chat_id):
+    """Get messages from a specific chat session (智能体或知识库)."""
+    import requests
+    headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}", "Content-Type": "application/json"}
+
+    try:
+        # Get session_id from query parameter or use cached session
+        session_id = request.args.get('session_id')
+        
+        # If no session_id provided, try to get it from agent sessions cache
+        if not session_id and chat_id in _agent_chat_sessions:
+            cached = _agent_chat_sessions[chat_id]
+            session_obj = cached.get("session")
+            if session_obj:
+                session_id = session_obj.id
+
+        if not session_id:
+            return jsonify({"success": False, "error": "Session not found"}), 404
+
+        # Try to get messages from agent sessions API first
+        try:
+            response = requests.get(
+                f"{RAGFLOW_BASE_URL}/api/v1/agents/{chat_id}/sessions/{session_id}/messages?page=1&page_size=50",
+                headers=headers,
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                messages = data.get("data", [])
+                return jsonify({"success": True, "messages": messages})
+        except Exception as e:
+            print(f"Error getting agent messages via API: {e}")
+
+        # Fallback: try chat sessions API
+        try:
+            response = requests.get(
+                f"{RAGFLOW_BASE_URL}/api/v1/chats/{chat_id}/sessions/{session_id}/messages?page=1&page_size=50",
+                headers=headers,
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                messages = data.get("data", [])
+                return jsonify({"success": True, "messages": messages})
+        except Exception as e:
+            print(f"Error getting chat messages via API: {e}")
+
+        return jsonify({"success": True, "messages": []})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # Static file serving
