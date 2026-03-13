@@ -149,6 +149,71 @@ def list_dataset_documents(dataset_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# Document download endpoint
+@app.route("/api/datasets/<dataset_id>/documents/<document_id>/download", methods=["GET"])
+def download_document(dataset_id, document_id):
+    """Download a specific document from the knowledge base."""
+    import requests
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+
+        # Get document info from list API to get the filename
+        doc_name = "document"
+        page = 1
+        page_size = 100
+
+        while page <= 10:
+            list_response = requests.get(
+                f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents?page={page}&page_size={page_size}",
+                headers=headers,
+                timeout=10
+            )
+            if list_response.status_code != 200:
+                break
+            try:
+                list_data = list_response.json()
+                if list_data.get("code") != 0:
+                    break
+                docs = list_data.get("data", {}).get("docs", [])
+                if not docs:
+                    break
+                for doc in docs:
+                    if doc.get("id") == document_id:
+                        doc_name = doc.get("name", "document")
+                        break
+                if doc_name != "document":
+                    break
+                if len(docs) < page_size:
+                    break
+                page += 1
+            except Exception:
+                break
+
+        # Get document content from RAGFlow
+        response = requests.get(
+            f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents/{document_id}",
+            headers=headers,
+            timeout=30,
+            stream=True
+        )
+
+        if response.status_code != 200:
+            return jsonify({"success": False, "error": f"Failed to download document: {response.text}"}), response.status_code
+
+        content_type = response.headers.get('Content-Type', 'application/octet-stream')
+
+        from flask import Response
+        return Response(
+            response.iter_content(chunk_size=8192),
+            mimetype=content_type,
+            headers={
+                'Content-Disposition': f'attachment; filename="{doc_name}"',
+                'Content-Length': response.headers.get('Content-Length', '')
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/api/datasets/<dataset_id>/documents/<document_id>/content", methods=["GET"])
 def get_document_content(dataset_id, document_id):
     """Get the content/chunks of a specific document."""

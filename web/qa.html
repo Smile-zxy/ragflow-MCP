@@ -59,6 +59,10 @@
             z-index: 100;
         }
 
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
         .sidebar-header {
             padding: 20px;
             border-bottom: 1px solid var(--border-color);
@@ -96,10 +100,11 @@
         .datasets-section {
             padding: 12px;
             border-top: 1px solid var(--border-color);
-            max-height: 200px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            flex: 1;
+            min-height: 0;
         }
 
         .datasets-header {
@@ -149,6 +154,55 @@
 
         .datasets-error {
             color: var(--error);
+        }
+
+        /* Agent Dropdown */
+        .agent-dropdown-container {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .agent-select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .agent-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .agent-select:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-hover);
+        }
+
+        /* Dropdown options styling */
+        .agent-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 10px;
+        }
+
+        .agent-loading, .agent-empty {
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
         }
 
         .dataset-item {
@@ -304,10 +358,11 @@
         .chat-history {
             padding: 12px;
             border-top: 1px solid var(--border-color);
-            max-height: 280px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            flex: 1;
+            min-height: 0;
         }
 
         .chat-history-header {
@@ -416,6 +471,7 @@
         .new-session-btn {
             width: 100%;
             padding: 8px 12px;
+            margin-top: 20px;
             margin-bottom: 8px;
             background: var(--accent-primary);
             color: white;
@@ -920,6 +976,32 @@
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             transition: all 0.2s;
+            position: relative;
+        }
+
+        .file-download-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: none;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover .file-download-btn {
+            display: flex;
+        }
+
+        .file-download-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
         }
 
         .file-item:hover {
@@ -1507,23 +1589,20 @@
                     </div>
                     <span class="logo-text">珂阳AI</span>
                 </div>
+                <button class="new-session-btn" onclick="createNewSession()" title="新建会话">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    新建会话
+                </button>
             </div>
 
-            <nav class="nav-menu">
-                <div class="nav-section">
-                    <div class="nav-section-title">
-                        <span>智能体</span>
-                        <button class="refresh-chats" title="刷新" onclick="loadAgents()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M23 4v6h-6"/>
-                                <path d="M1 20v-6h6"/>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="chatsList" class="chats-loading">加载中...</div>
-                </div>
-            </nav>
+            <div class="agent-dropdown-container">
+                <select id="agentSelect" class="agent-select" onchange="handleAgentSelect(this)">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
 
             <!-- RAGFlow Datasets -->
             <div class="datasets-section">
@@ -1568,13 +1647,6 @@
 
             <!-- Chat History -->
             <div class="chat-history">
-                <button class="new-session-btn" onclick="createNewSession()" title="新建会话">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    新建会话
-                </button>
                 <div class="chat-history-header">
                     <span>问答历史</span>
                     <button class="clear-history" title="清空历史">
@@ -1592,9 +1664,9 @@
             <!-- User Profile -->
             <div class="sidebar-footer">
                 <div class="user-profile">
-                    <div class="user-avatar">张</div>
+                    <div class="user-avatar">C</div>
                     <div class="user-info">
-                        <div class="user-name">张明</div>
+                        <div class="user-name">Cowin</div>
                         <div class="user-role">MES产品部</div>
                     </div>
                 </div>
@@ -1631,13 +1703,6 @@
                             <line x1="16" y1="17" x2="8" y2="17"/>
                         </svg>
                     </button>
-                    <!-- Jump to Previous Question Button -->
-                    <button class="jump-to-prev-question hidden" id="jumpToPrevQuestion" onclick="jumpToPreviousQuestion()" title="跳转到上一个提问">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="15 18 9 12 15 6"/>
-                        </svg>
-                        <span>上一个提问</span>
-                    </button>
                     <!-- Empty State -->
                     <div class="empty-state" id="emptyState">
                         <div class="empty-state-icon">
@@ -1651,6 +1716,13 @@
 
                     <!-- Chat Messages -->
                     <div class="chat-messages" id="chatMessages" style="display: none;">
+                        <!-- Jump to Previous Question Button -->
+                        <button class="jump-to-prev-question hidden" id="jumpToPrevQuestion" onclick="jumpToPreviousQuestion()" title="跳转到上一个提问" style="position: sticky; top: 10px; z-index: 10; margin-bottom: 10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            <span>上一个提问</span>
+                        </button>
                         <!-- Messages will be added here -->
                     </div>
 
@@ -1746,8 +1818,8 @@
 
         // Load agents from RAGFlow /v1/canvas API
         async function loadAgents() {
-            const chatsList = document.getElementById('chatsList');
-            chatsList.innerHTML = '<div class="chats-loading">加载中...</div>';
+            const agentSelect = document.getElementById('agentSelect');
+            agentSelect.innerHTML = '<option value="">加载中...</option>';
 
             try {
                 const response = await fetch(`${API_BASE_URL}/api/canvas`);
@@ -1755,38 +1827,47 @@
 
                 if (data.success && data.data) {
                     agents = data.data;
-                    renderAgents();
+                    renderAgentDropdown();
                 } else {
-                    chatsList.innerHTML = `<div class="chats-error">${data.error || '获取智能体失败'}</div>`;
+                    agentSelect.innerHTML = `<option value="">${data.error || '获取智能体失败'}</option>`;
                 }
             } catch (error) {
                 console.error('Failed to load agents:', error);
-                chatsList.innerHTML = '<div class="chats-error">无法连接到服务器</div>';
+                agentSelect.innerHTML = '<option value="">无法连接服务器</option>';
             }
         }
 
-        // Render agents to sidebar
-        function renderAgents() {
-            const chatsList = document.getElementById('chatsList');
+        // Render agents to dropdown
+        function renderAgentDropdown() {
+            const agentSelect = document.getElementById('agentSelect');
 
             if (agents.length === 0) {
-                chatsList.innerHTML = '<div class="chats-empty">暂无智能体</div>';
+                agentSelect.innerHTML = '<option value="">暂无智能体</option>';
                 return;
             }
 
-            chatsList.innerHTML = agents.map(agent => `
-                <div class="chat-nav-item ${agent.id === currentAgentId ? 'active' : ''}"
-                     data-id="${agent.id}"
-                     data-name="${agent.name}"
-                     onclick="selectAgent('${agent.id}', '${agent.name}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 16v-4"/>
-                        <path d="M12 8h.01"/>
-                    </svg>
-                    <span class="chat-nav-item-name" title="${agent.name}">${agent.name}</span>
-                </div>
-            `).join('');
+            agentSelect.innerHTML = '' + 
+                agents.map(agent => `
+                    <option value="${agent.id}" ${agent.id === currentAgentId ? 'selected' : ''}>${agent.name}</option>
+                `).join('');
+        }
+
+        // Handle agent dropdown selection
+        function handleAgentSelect(selectElement) {
+            const agentId = selectElement.value;
+            if (!agentId) return;
+            
+            console.log('Selected agent ID:', agentId);
+            console.log('Available agents:', agents);
+            
+            // Find agent by ID (compare as strings)
+            const agent = agents.find(a => String(a.id) === String(agentId));
+            if (agent) {
+                console.log('Found agent:', agent.name);
+                selectAgent(agent.id, agent.name);
+            } else {
+                console.error('Agent not found for ID:', agentId);
+            }
         }
 
         // Select an agent and switch to that agent's session
@@ -1794,6 +1875,8 @@
             // 选中智能体时取消知识库选中
             selectedDatasetId = null;
             currentAgentId = id;
+            // Use agent ID as session key for this agent
+            currentSessionId = 'agent_' + id;
             currentContext = {
                 type: 'agent',
                 id: id,
@@ -1815,7 +1898,7 @@
 
             // Then update UI
             renderDatasets();
-            renderAgents();
+            renderAgentDropdown();
 
             // Update context display
             if (contextName) contextName.textContent = name;
@@ -1824,28 +1907,29 @@
             // Load agent's message history
             loadAgentMessages(id);
 
-            // Call backend to set current agent and create/fetch session
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/canvas/set`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agent_id: id })
-                });
-                const result = await response.json();
-                if (result.success && result.chat_id) {
-                    currentChatId = result.chat_id;
-                }
-            } catch (error) {
-                console.error('Failed to set current agent:', error);
-            }
-
             console.log('Selected agent:', name);
         }
 
         // Load and display messages for a specific agent
         function loadAgentMessages(agentId) {
             chatMessages.innerHTML = '';
+            
+            // Always show chat UI when an agent is selected (even with no messages)
+            emptyState.style.display = 'none';
+            chatMessages.style.display = 'flex';
+            if (contextHint) contextHint.style.display = 'flex';
+            hasStartedChat = true;
+            faqSection.classList.add('hidden');
 
+            // First try to load from sessionMessages using currentSessionId
+            if (currentSessionId && sessionMessages[currentSessionId] && sessionMessages[currentSessionId].length > 0) {
+                sessionMessages[currentSessionId].forEach(msg => {
+                    renderMessageDirect(msg.type, msg.content, msg.references);
+                });
+                return;
+            }
+
+            // Fallback to agentMessages
             if (agentMessages[agentId] && agentMessages[agentId].length > 0) {
                 // Show chat UI and load messages
                 emptyState.style.display = 'none';
@@ -1987,7 +2071,7 @@
 
             // Then update UI
             renderDatasets();
-            renderAgents();
+            renderAgentDropdown();
 
             // Update context display
             if (contextName) contextName.textContent = name;
@@ -2228,7 +2312,7 @@
             filesPanelList.innerHTML = documents.map(doc => {
                 const fileType = getFileIcon(doc.name);
                 return `
-                    <div class="file-item" onclick="showFilePreviewById('${doc.id}', '${doc.name}')">
+                    <div class="file-item">
                         <div class="file-item-icon ${fileType}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 ${getFileIconSvg(fileType)}
@@ -2238,12 +2322,31 @@
                             <div class="file-item-name" title="${doc.name}">${doc.name}</div>
                             <div class="file-item-meta">${doc.size ? formatFileSize(doc.size) : ''}</div>
                         </div>
+                        <button class="file-download-btn" onclick="event.stopPropagation(); downloadFile('${doc.id}', '${doc.name}')" title="下载文件">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </button>
                     </div>
                 `;
             }).join('');
         }
 
-        // Format file size
+        
+        // Download file from knowledge base
+        function downloadFile(docId, docName) {
+            if (!selectedDatasetId) {
+                alert('请先选择一个知识库');
+                return;
+            }
+            // Use RAGFlow document download API from document_app.py: /v1/document/get/{doc_id}
+            const downloadUrl = `${API_BASE_URL}/api/datasets/${selectedDatasetId}/documents/${docId}/download`;
+            window.open(downloadUrl, '_blank');
+        }
+
+// Format file size
         function formatFileSize(bytes) {
             if (!bytes) return '';
             const units = ['B', 'KB', 'MB', 'GB'];
@@ -2435,7 +2538,7 @@
                         renderDatasets();
                         
                         currentAgentId = session.contextId;
-                        renderAgents();
+                        renderAgentDropdown();
                         
                         currentContext = {
                             type: 'agent',
@@ -2489,7 +2592,7 @@
                         // Set current context without calling selectDataset
                         currentAgentId = null;
                         selectedDatasetId = session.contextId;
-                        renderAgents();
+                        renderAgentDropdown();
                         renderDatasets();
                         
                         // Also set currentContext for proper message handling
