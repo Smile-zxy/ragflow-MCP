@@ -126,15 +126,92 @@ Access the web UI at: http://192.168.x.x:5000/
 }
 ```
 
+### 文档相关
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/datasets/<dataset_id>/documents` | GET | 获取知识库中的文件列表 |
+| `/api/datasets/<dataset_id>/documents/<document_id>/download` | GET | 下载指定文件 |
+| `/api/datasets/<dataset_id>/documents/<document_id>/content` | GET | 获取文档内容/片段 |
+
+**文件下载实现方式:**
+
+使用 RAGFlow SDK 的 `Document.download()` 方法:
+
+```python
+from ragflow_sdk import RAGFlow
+from ragflow_sdk.modules.document import Document
+
+client = RAGFlow(api_key=RAGFLOW_API_KEY, base_url=RAGFLOW_BASE_URL)
+
+# 获取数据集
+datasets = client.list_datasets()
+target_dataset = next((ds for ds in datasets if ds.id == dataset_id), None)
+
+# 获取文档
+documents = target_dataset.list_documents()
+target_doc = next((doc for doc in documents if doc.id == document_id), None)
+
+# 下载文档内容
+file_content = target_doc.download()
+```
+
+前端使用 fetch + Blob 方式实现直接下载:
+
+```javascript
+fetch(downloadUrl)
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = docName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    });
+```
+
 ### 检索相关
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
 | `/api/retrieve` | POST | 直接检索知识库内容 (不经过 AI) |
+| `/api/retrieve-with-summary` | POST | 检索知识库内容并使用 AI 总结 |
 
 **`/api/retrieve` 请求:**
 ```json
 {"query": "关键词", "dataset_ids": ["ID1"], "top_k": 5}
+```
+
+**`/api/retrieve-with-summary` 请求:**
+```json
+{"query": "关键词", "dataset_ids": ["ID1"], "top_k": 5}
+```
+
+**`/api/retrieve-with-summary` 响应:**
+```json
+{
+  "success": true,
+  "data": [{"source": "文档名", "content": "相关内容"}],
+  "answer": "检索到的原始内容",
+  "summary": "AI 总结后的回答"
+}
+```
+
+### FAQ 管理相关
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/faqs` | GET | 获取 FAQ 数据 |
+| `/api/faqs` | POST | 保存 FAQ 数据 |
+
+**FAQ 数据结构:**
+```json
+{
+  "agent_xxx": [
+    {"question": "问题", "answer": "答案（支持HTML，如<img>）"}
+  ]
+}
 ```
 
 ### 服务配置
@@ -225,6 +302,23 @@ Access the web UI at: http://192.168.x.x:5000/
 2. 如果是本地访问，直接使用当前页面地址作为 API 地址
 3. 如果是远程访问，调用 `/api/server-ip` 获取服务器 IP
 4. 如果获取失败，回退到使用当前页面地址
+
+## 前端功能说明
+
+### FAQ 管理功能
+- 支持设置智能体的常见问题
+- 答案支持 HTML 标签（如 `<img src="图片链接">`）
+- 点击 FAQ 问题直接在聊天中显示答案（不调用 AI）
+
+### 文件检索功能
+- 点击知识库文件可触发检索
+- 支持检索 + AI 总结（调用 `/api/retrieve-with-summary`）
+- 检索结果自动添加到问答历史
+
+### UI 调整
+- 智能体/知识库下拉框：减小尺寸和字体
+- 刷新按钮：鼠标悬停显示手指光标和旋转动画
+- 左侧导航栏：减小尺寸和字体
 
 ## 常见问题
 

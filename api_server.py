@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import socket
@@ -149,70 +150,110 @@ def list_dataset_documents(dataset_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# Document download endpoint
-@app.route("/api/datasets/<dataset_id>/documents/<document_id>/download", methods=["GET"])
-def download_document(dataset_id, document_id):
-    """Download a specific document from the knowledge base."""
+
+# Debug endpoint to check document structure
+@app.route("/api/debug/document/<dataset_id>/<document_id>", methods=["GET"])
+def debug_document(dataset_id, document_id):
+    """Debug: check document info from RAGFlow."""
     import requests
     try:
         headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
-
-        # Get document info from list API to get the filename
-        doc_name = "document"
-        page = 1
-        page_size = 100
-
-        while page <= 10:
-            list_response = requests.get(
-                f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents?page={page}&page_size={page_size}",
-                headers=headers,
-                timeout=10
-            )
-            if list_response.status_code != 200:
-                break
-            try:
-                list_data = list_response.json()
-                if list_data.get("code") != 0:
-                    break
-                docs = list_data.get("data", {}).get("docs", [])
-                if not docs:
-                    break
-                for doc in docs:
-                    if doc.get("id") == document_id:
-                        doc_name = doc.get("name", "document")
-                        break
-                if doc_name != "document":
-                    break
-                if len(docs) < page_size:
-                    break
-                page += 1
-            except Exception:
-                break
-
-        # Get document content from RAGFlow
+        
+        # Get document info
         response = requests.get(
             f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents/{document_id}",
             headers=headers,
-            timeout=30,
-            stream=True
+            timeout=10
         )
+        
+        return jsonify({
+            "status_code": response.status_code,
+            "response": response.json() if response.status_code == 200 else response.text
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        if response.status_code != 200:
-            return jsonify({"success": False, "error": f"Failed to download document: {response.text}"}), response.status_code
+# Document download endpoint
+@app.route("/api/datasets/<dataset_id>/documents/<document_id>/download", methods=["GET"])
+def download_document(dataset_id, document_id):
+    """Download a specific document from the knowledge base using RAGFlow SDK."""
+    try:
+        # Get document name from list
+        doc_name = f"{document_id}.pdf"
+        try:
+            list_response = requests.get(
+                f"{RAGFLOW_BASE_URL}/api/v1/datasets/{dataset_id}/documents?page=1&page_size=50",
+                headers={"Authorization": f"Bearer {RAGFLOW_API_KEY}"},
+                timeout=5
+            )
+            if list_response.status_code == 200:
+                list_data = list_response.json()
+                docs = list_data.get("data", [])
+                for doc in docs:
+                    if doc.get("id") == document_id:
+                        doc_name = doc.get("name", doc_name)
+                        break
+        except Exception:
+            pass  # Use default name if this fails
 
-        content_type = response.headers.get('Content-Type', 'application/octet-stream')
-
+        # Use RAGFlow SDK to download document
+        from ragflow_sdk import RAGFlow
+        from ragflow_sdk.modules.document import Document
+        
+        client = RAGFlow(api_key=RAGFLOW_API_KEY, base_url=RAGFLOW_BASE_URL)
+        
+        # Get the document object
+        datasets = client.list_datasets()
+        target_dataset = None
+        for ds in datasets:
+            if ds.id == dataset_id:
+                target_dataset = ds
+                break
+        
+        if not target_dataset:
+            return jsonify({"success": False, "error": "Dataset not found"}), 404
+        
+        # List documents to find our document
+        documents = target_dataset.list_documents()
+        target_doc = None
+        for doc in documents:
+            if doc.id == document_id:
+                target_doc = doc
+                break
+        
+        if not target_doc:
+            return jsonify({"success": False, "error": "Document not found"}), 404
+        
+        # Download the document
+        file_content = target_doc.download()
+        
+        # Determine content type based on file extension
+        import os
+        ext = os.path.splitext(doc_name)[1].lower()
+        content_types = {
+            '.pdf': 'application/pdf',
+            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.doc': 'application/msword',
+            '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            '.ppt': 'application/vnd.ms-powerpoint',
+            '.txt': 'text/plain',
+            '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            '.xls': 'application/vnd.ms-excel',
+        }
+        content_type = content_types.get(ext, 'application/octet-stream')
+        
         from flask import Response
         return Response(
-            response.iter_content(chunk_size=8192),
+            file_content,
             mimetype=content_type,
             headers={
                 'Content-Disposition': f'attachment; filename="{doc_name}"',
-                'Content-Length': response.headers.get('Content-Length', '')
+                'Content-Length': len(file_content)
             }
         )
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        import traceback
+        return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
 
 @app.route("/api/datasets/<dataset_id>/documents/<document_id>/content", methods=["GET"])
 def get_document_content(dataset_id, document_id):
@@ -694,6 +735,140 @@ def retrieve_knowledge():
 
 
 # API endpoint to get server IP
+@app.route("/api/retrieve-with-summary", methods=["POST"])
+def retrieve_with_summary():
+    """Retrieve knowledge and use AI to summarize the results."""
+    import requests
+    data = request.get_json()
+    if not data or not data.get("query"):
+        return jsonify({"success": False, "error": "query is required"}), 400
+
+    query = data["query"]
+    dataset_ids = data.get("dataset_ids")
+    top_k = data.get("top_k", 5)
+
+    try:
+        if not dataset_ids:
+            datasets = rag_client.list_datasets()
+            dataset_ids = [ds.id for ds in datasets]
+
+        if not dataset_ids:
+            return jsonify({"success": True, "data": [], "answer": "No datasets found."})
+
+        # First, retrieve the content
+        results = []
+        def extract_chunks(chunks):
+            for chunk in chunks:
+                content = "N/A"
+                if hasattr(chunk, 'content_with_weight'):
+                    content = chunk.content_with_weight
+                elif hasattr(chunk, 'content'):
+                    content = chunk.content
+                elif isinstance(chunk, dict):
+                    content = chunk.get('content_with_weight') or chunk.get('content') or str(chunk)
+                else:
+                    content = str(chunk)
+
+                doc_name = "Unknown"
+                if hasattr(chunk, 'document_name'):
+                    doc_name = chunk.document_name
+                elif isinstance(chunk, dict):
+                    doc_name = chunk.get('document_name', 'Unknown')
+
+                results.append({"source": doc_name, "content": content})
+
+        try:
+            chunks = rag_client.retrieve(question=query, dataset_ids=dataset_ids, top_k=top_k)
+            if chunks:
+                extract_chunks(chunks)
+        except Exception:
+            for ds_id in dataset_ids:
+                try:
+                    chunks = rag_client.retrieve(question=query, dataset_ids=[ds_id], top_k=max(1, top_k // len(dataset_ids)))
+                    if chunks:
+                        extract_chunks(chunks)
+                except Exception:
+                    continue
+
+        if not results:
+            return jsonify({
+                "success": True,
+                "data": [],
+                "answer": "未找到相关内容。",
+                "summary": "未找到与「" + query + "」相关的内容，无法生成总结。"
+            })
+
+        # Build context from retrieved results
+        context = "\n\n".join([f"[{r['source']}]\n{r['content']}" for r in results])
+        
+        # Use AI to summarize
+        summary_prompt = f"""请根据以下检索到的内容，对用户的问题「{query}」进行总结和回答。
+
+检索到的内容：
+{context}
+
+请给出一个清晰、简洁的回答，并标注信息来源。"""
+
+        # Try to use agent if available
+        if _current_agent_id:
+            headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}", "Content-Type": "application/json"}
+            # Create new session for summary
+            response = requests.post(
+                f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/sessions",
+                headers=headers,
+                json={"name": "Web Summary Session"},
+                timeout=120
+            )
+            if response.status_code == 200:
+                result_data = response.json()
+                if result_data.get("code") == 0:
+                    session_id = result_data.get("data", {}).get("id")
+                    # Send summary request
+                    response = requests.post(
+                        f"{RAGFLOW_BASE_URL}/api/v1/agents/{_current_agent_id}/completions",
+                        headers=headers,
+                        json={"question": summary_prompt, "stream": False, "session_id": session_id},
+                        timeout=120
+                    )
+                    if response.status_code == 200:
+                        result_data = response.json()
+                        if result_data.get("code") == 0:
+                            summary = result_data.get("data", {}).get("data", {}).get("content", "")
+                            return jsonify({
+                                "success": True,
+                                "data": results,
+                                "answer": "\n\n".join([r["content"] for r in results]),
+                                "summary": summary
+                            })
+        
+        # Fallback: use RAGFlow chat session
+        session = get_or_create_session()
+        if session:
+            summary = ""
+            for msg in session.ask(summary_prompt, stream=False):
+                d = msg.to_json()
+                summary = d.get("content", "")
+            return jsonify({
+                "success": True,
+                "data": results,
+                "answer": "\n\n".join([r["content"] for r in results]),
+                "summary": summary
+            })
+        else:
+            # No chat session available, return raw results as summary
+            summary = "以下是检索到的相关内容：\n\n" + "\n\n".join([f"【{r['source']}】\n{r['content']}" for r in results[:3]])
+            return jsonify({
+                "success": True,
+                "data": results,
+                "answer": "\n\n".join([r["content"] for r in results]),
+                "summary": summary
+            })
+
+    except Exception as e:
+        import traceback
+        return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
+
+
 @app.route("/api/server-ip", methods=["GET"])
 def get_current_server_ip():
     """Return the server's IP address for frontend configuration."""
@@ -750,6 +925,44 @@ def get_chat_messages(chat_id):
             print(f"Error getting chat messages via API: {e}")
 
         return jsonify({"success": True, "messages": []})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# FAQ data file path
+FAQ_FILE = os.path.join(os.path.dirname(__file__), "data", "faqs.json")
+
+
+@app.route("/api/faqs", methods=["GET"])
+def get_faqs():
+    """Get all FAQs from the local file."""
+    try:
+        if os.path.exists(FAQ_FILE):
+            with open(FAQ_FILE, "r", encoding="utf-8") as f:
+                faqs = json.load(f)
+            return jsonify({"success": True, "data": faqs})
+        else:
+            return jsonify({"success": True, "data": {}})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/faqs", methods=["POST"])
+def save_faqs():
+    """Save FAQs to the local file."""
+    import json
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        # Ensure data directory exists
+        os.makedirs(os.path.dirname(FAQ_FILE), exist_ok=True)
+
+        with open(FAQ_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

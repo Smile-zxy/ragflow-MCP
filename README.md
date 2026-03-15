@@ -19,7 +19,7 @@ pip install mcp ragflow-sdk
 
 在运行之前，请设置环境变量：
 
-- `RAGFLOW_API_KEY`: ragflow-Y0NTFkZTQ2OWFkZjExZjA4Y2NiMTJkM2
+- `RAGFLOW_API_KEY`: ragflow-Y0NTFkZTQ2OWFkZjExZjA4Y2NiMTJkM2  // <你的本地ragflow API密钥>
 - `RAGFLOW_BASE_URL`: http://localhost:9380
 
 ## 运行
